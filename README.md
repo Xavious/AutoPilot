@@ -7,6 +7,13 @@ This has been created using Muddler's development paradigm https://github.com/de
 
 If you just want to download the package you can download the `AutoPilot.mpackage` release from https://github.com/Xavious/AutoPilot/releases
 
+## ToDo
+
+I'll add to this as I get feedback, but I have at least these items I could tackle in the future:
+
+- Streamline flow/setup to be more intuitive
+- Support for turbolifts
+
 ## Instructions
 
 All commands start with `ap` for (AutoPilot). To get a list of commands use:
@@ -59,11 +66,17 @@ ap fly tatooine
 ```
 
 Will fly to each planet in the list starting with Ithor and eventually finishing on Coruscant. 
+
 ```
 ap fly ithor,kashyyyk,coruscant
 ap fly ithor, kashyyyk, coruscant
 ```
 
+Setting up a leveling loop (you can add as many iterations as you want)
+
+```
+ap fly kashyyyk,corellia,kashyyyyk,corellia,kashyyyyk,corellia
+```
 
 ### Setting up your ship
 
