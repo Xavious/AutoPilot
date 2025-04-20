@@ -1,2 +1,8 @@
 # AutoPilot
- A Lotj Mudlet package that automates flight and cargo hauling
+
+### Description
+A Mudlet package for Lotj that automates space travel and cargo hauling.
+
+### Usage
+
+> ap help
