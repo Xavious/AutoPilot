@@ -1,1 +1,12 @@
-null
+[
+    {
+           "name": "autopilot.cargo",
+           "isActive": "no",
+           "isFolder": "yes"
+    },
+    {
+           "name": "autopilot.flight",
+           "isActive": "no",
+           "isFolder": "yes"
+    }
+]

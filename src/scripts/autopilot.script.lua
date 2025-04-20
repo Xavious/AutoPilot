@@ -19,6 +19,15 @@ function autopilot.tableString(s)
   return t
 end
 
+function autopilot.openShip()
+  debugc("autopilot.openShip()")
+  local openString = "open \""..autopilot.ship.name.."\""
+  if autopilot.ship.hatch then
+    openString = openString.." "..autopilot.ship.hatch
+  end
+  send(openString)
+end
+
 function autopilot.alias.profit()
   local now = getEpoch()
   local elapsed = now - autopilot.startTime
@@ -175,7 +184,7 @@ function autopilot.alias.fly()
   autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
   cecho("[<cyan>AutoPilot<reset>] <yellow>Engaged<reset> | <green>Destination:<reset> "..autopilot.destination.planet.."\n")
   enableTrigger("autopilot.flight")
-  send("open "..autopilot.ship.name)
+  autopilot.openShip()
 end
 
 function autopilot.alias.setShip()
@@ -533,7 +542,7 @@ function autopilot.trigger.land()
     autopilot.destination = {}
     autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
     cecho("<green>Destination:<reset> "..autopilot.destination.planet.."\n")
-    send("open "..autopilot.ship.name)
+    autopilot.openShip()
     return  
   end
   
@@ -555,7 +564,7 @@ end
 function autopilot.trigger.cargoPurchased()
   debugc("autopilot.trigger.cargoPurchased()")
   autopilot.expense = autopilot.expense + matches.cost
-  send("open "..autopilot.ship.name)
+  autopilot.openShip()
 end
 
 function autopilot.trigger.cargoSold()
