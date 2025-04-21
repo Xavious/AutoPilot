@@ -5,7 +5,7 @@ A Mudlet package for Lotj that automates space travel and cargo hauling.
 
 This has been created using Muddler's development paradigm https://github.com/demonnic/muddler
 
-If you just want to download the package you can download the `AutoPilot.mpackage` release from https://github.com/Xavious/AutoPilot/releases
+If you just want to download the package you can download the latest `AutoPilot.mpackage` release from https://github.com/Xavious/AutoPilot/releases
 
 ## ToDo
 
