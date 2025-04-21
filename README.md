@@ -13,6 +13,7 @@ I'll add to this as I get feedback, but I have at least these items I could tack
 
 - Streamline flow/setup to be more intuitive
 - Support for turbolifts
+- Support for landing pad preference
 
 ## Instructions
 
