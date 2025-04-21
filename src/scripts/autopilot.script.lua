@@ -1,8 +1,8 @@
 if not autopilot and io.exists(getMudletHomeDir().."/AutoPilot.lua") then
+  autopilot = {}
   table.load(getMudletHomeDir().."/AutoPilot.lua", autopilot)
   cecho("\n[<cyan>AutoPilot<reset>] Loaded save file.<reset>\n")
 end
-autopilot = autopilot or {}
 autopilot.alias = {}
 autopilot.trigger = {}
 autopilot.ships = autopilot.ships or {}
@@ -170,7 +170,7 @@ function autopilot.alias.fly()
   debugc("autopilot.alias.fly()")
   if matches.planets == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap fly \<planet/planets\><reset>\n")
+    cecho("<red>ap fly <planet/planets><reset>\n")
     cecho("----------------Usage Examples----------------\n")
     cecho("<yellow>ap fly planet\n")
     cecho("<yellow>ap fly planet1,planet2,planet3\n")
@@ -191,7 +191,7 @@ function autopilot.alias.setShip()
 debugc("autopilot.alias.setShip()")
   if matches.ship == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap set name \<name\><reset>\n")
+    cecho("<red>ap set name <name><reset>\n")
     return
   end 
   autopilot.ship.name = matches.ship
@@ -202,7 +202,7 @@ function autopilot.alias.setEnter()
   debugc("autopilot.alias.setEnter()")
   if matches.commands == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap set enter \<commands\><reset>\n")
+    cecho("<red>ap set enter <commands><reset>\n")
     return
   end 
   autopilot.ship.enter = autopilot.tableString(matches.commands)
@@ -213,7 +213,7 @@ function autopilot.alias.setExit()
   debugc("autopilot.alias.setExit()")
   if matches.commands == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap set exit \<commands\><reset>\n")
+    cecho("<red>ap set exit <commands><reset>\n")
     return
   end
   autopilot.ship.exit = autopilot.tableString(matches.commands)
@@ -224,7 +224,7 @@ function autopilot.alias.setHatch()
   debugc("autopilot.alias.setHatch()")
   if matches.code == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap set hatch \<code\><reset>\n")
+    cecho("<red>ap set hatch <code><reset>\n")
     return
   end
   autopilot.ship.hatch = matches.code
@@ -235,7 +235,7 @@ function autopilot.alias.setCapacity()
   debugc("autopilot.alias.setCapacity()")
   if matches.capacity == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap set capacity \<amount\><reset>\n")
+    cecho("<red>ap set capacity <amount><reset>\n")
     return
   end
   
@@ -398,7 +398,7 @@ function autopilot.alias.addStop()
   debugc("autopilot.alias.addStop()")
   if matches.planet == "" or matches.resource == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap add stop \<planet\>:\<resource\><reset>\n")
+    cecho("<red>ap add stop <planet>:<resource><reset>\n")
         cecho("----------------Usage Examples----------------\n")
     cecho("<yellow>ap add stop coruscant:food\n")
     cecho("<yellow>ap add stop nal hutta:spice\n")
