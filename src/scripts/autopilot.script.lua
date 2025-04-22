@@ -3,6 +3,7 @@ if not autopilot and io.exists(getMudletHomeDir().."/AutoPilot.lua") then
   table.load(getMudletHomeDir().."/AutoPilot.lua", autopilot)
   cecho("\n[<cyan>AutoPilot<reset>] Loaded save file.<reset>\n")
 end
+autopilot = autopilot or {}
 autopilot.alias = {}
 autopilot.trigger = {}
 autopilot.ships = autopilot.ships or {}
