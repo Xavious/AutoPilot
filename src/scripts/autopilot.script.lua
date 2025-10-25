@@ -669,8 +669,11 @@ function autopilot.alias.addRoute()
     return
   end
 
-  -- Parse simple comma-separated planet list
+  -- Parse simple comma-separated planet list and force lowercase
   local planets = autopilot.tableString(matches.planets)
+  for i, planet in ipairs(planets) do
+    planets[i] = planet:lower()
+  end
   autopilot.currentRoute = {planets = planets}
 
   -- Display the route
@@ -721,8 +724,8 @@ function autopilot.alias.addDelivery()
 
   local routeIndex = matches.routeIndex and tonumber(matches.routeIndex) or nil
   local delivery = {
-    planet = matches.planet,
-    resource = matches.resource,
+    planet = matches.planet:lower(),
+    resource = matches.resource:lower(),
     route = routeIndex
   }
 
