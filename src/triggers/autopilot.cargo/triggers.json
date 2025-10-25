@@ -15,6 +15,10 @@
                      {
                             "pattern": "^You\\x1bpurchased\\x1b(?\u003camount\u003e[\\d]+)\\x1bunits\\x1bof\\x1b(?\u003cresource\u003e[\\w ]+)\\x1bfor\\x1b(?\u003ccost\u003e[\\d]+)\\x1bcredits\\x1b.$",
                             "type": "regex"
+                     },
+                     {
+                            "pattern": "^You find a contact willing to pay (?<cost>\\d+) credits to unload (?<amount>\\d+) units of (?<resource>[\\w ]+)\\.\\s*$",
+                            "type": "regex"
                      }
               ],
               "script": ""
@@ -34,6 +38,10 @@
               "patterns": [
                      {
                             "pattern": "^You\\x1bsell\\x1b(?\u003camount\u003e[\\d]+)\\x1bunits\\x1bof\\x1b(?\u003cresource\u003e[\\w ]+)\\x1bfor\\x1b(?\u003ccost\u003e[\\d]+)\\x1bcredits\\x1b.$",
+                            "type": "regex"
+                     },
+                     {
+                            "pattern": "^You find a contact willing to pay (?<cost>\\d+) credits to unload (?<amount>\\d+) units of smuggled (?<resource>[]\\w ]+)\\.$",
                             "type": "regex"
                      }
               ],

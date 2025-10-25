@@ -174,7 +174,7 @@ AutoPilot will loop through every **stop** in a **route** using "first in, first
 This command is used to add a **stop** to the current **route**
 
 ```
-ap add stop <planet>:<resource>
+ap add delivery <planet>:<resource>
 ```
 
 **Examples**
@@ -182,8 +182,8 @@ ap add stop <planet>:<resource>
 This example assumes a 2 planet route where you're starting on Corellia. When you start the cargo automation it will fill the cargo holds with electronics and plot a course to Coruscant. Upon landing on Coruscant it would sell the electronics, purchase food, then plot a course for Corellia and sell the food there. At this point a full loop would be complet and it would start again from the beginning of the route.
 
 ```
-ap add stop coruscant:electronics
-ap add stop corellia:food
+ap add delivery coruscant:electronics
+ap add delivery corellia:food
 ```
 
 #### Start Cargo
