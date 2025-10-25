@@ -13,7 +13,7 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "^You purchased (?\u003camount\u003e[\\d]+) units of (?\u003cresource\u003e[\\w ]+) for (?\u003ccost\u003e[\\d]+) credits.$",
+                            "pattern": "^You\\x1bpurchased\\x1b(?\u003camount\u003e[\\d]+)\\x1bunits\\x1bof\\x1b(?\u003cresource\u003e[\\w ]+)\\x1bfor\\x1b(?\u003ccost\u003e[\\d]+)\\x1bcredits\\x1b.$",
                             "type": "regex"
                      }
               ],
@@ -33,7 +33,7 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "^You sell (?\u003camount\u003e[\\d]+) units of (?\u003cresource\u003e[\\w ]+) for (?\u003ccost\u003e[\\d]+) credits.$",
+                            "pattern": "^You\\x1bsell\\x1b(?\u003camount\u003e[\\d]+)\\x1bunits\\x1bof\\x1b(?\u003cresource\u003e[\\w ]+)\\x1bfor\\x1b(?\u003ccost\u003e[\\d]+)\\x1bcredits\\x1b.$",
                             "type": "regex"
                      }
               ],
@@ -53,7 +53,7 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "You pay (?\u003ccost\u003e.*) credits to refuel the ship.",
+                            "pattern": "You\\x1bpay\\x1b(?\u003ccost\u003e.*)\\x1bcredits\\x1bto\\x1brefuel\\x1bthe\\x1bship.",
                             "type": "regex"
                      }
               ],
