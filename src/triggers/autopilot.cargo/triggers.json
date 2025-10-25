@@ -17,7 +17,7 @@
                             "type": "regex"
                      },
                      {
-                            "pattern": "^You find a contact willing to pay (?<cost>\\d+) credits to unload (?<amount>\\d+) units of (?<resource>[\\w ]+)\\.\\s*$",
+                            "pattern": "^You pay (?<cost>\\d+) credits to have (?<amount>\\d+) units of smuggled (?<resource>[\\w ]+) loaded on to your ship\\.$",
                             "type": "regex"
                      }
               ],
