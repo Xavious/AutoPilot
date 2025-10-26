@@ -229,5 +229,19 @@
               "regex": "^ap list pads$",
               "script": "",
               "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.showGUI",
+              "isActive": "yes",
+              "regex": "^ap (?:gui|show)$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.hideGUI",
+              "isActive": "yes",
+              "regex": "^ap hide$",
+              "script": "",
+              "isFolder": "no"
        }
 ]
