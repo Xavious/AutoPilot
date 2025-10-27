@@ -13,12 +13,12 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "^You\\x1bopen\\x1bthe\\x1bhatch\\x1bon\\x1b(?\u003cship_type\u003e[a-zA-Z0-9 \\-]+)\\x1b\\'(?\u003cship_name\u003e[a-zA-Z0-9 ]+)\\'\\x1b.$",
+                            "pattern": "^You open the hatch on (?<ship_type>[a-zA-Z0-9 \\-]+) \\'(?<ship_name>[a-zA-Z0-9 ]+)\\'.$",
                             "type": "regex"
                      },
                      {
-                            "pattern": "It's\\x1balready\\x1bopen!",
-                            "type": "regex"
+                            "pattern": "It's already open!",
+                            "type": "exactMatch"
                      }
               ],
               "script": ""
@@ -37,8 +37,8 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "The\\x1bship\\x1bleaves\\x1bthe\\x1bplatform\\x1bfar\\x1bbehind\\x1bas\\x1bit\\x1bflies\\x1binto\\x1bspace.",
-                            "type": "regex"
+                            "pattern": "The ship leaves the platform far behind as it flies into space.",
+                            "type": "exactMatch"
                      }
               ],
               "script": ""
@@ -57,11 +57,11 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "Starsystem: (?\u003csystem\u003e.*)",
+                            "pattern": "Starsystem: (?<system>.*)",
                             "type": "regex"
                      },
                      {
-                            "pattern": "Coordinates: (?\u003cx\u003e[-?\\d]+) (?\u003cy\u003e[-?\\d]+) (?\u003cz\u003e[-?\\d]+)",
+                            "pattern": "Coordinates: (?<x>[-?\\d]+) (?<y>[-?\\d]+) (?<z>[-?\\d]+)",
                             "type": "regex"
                      }
               ],
@@ -81,8 +81,8 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "\\[Status\\]:\\x1bHyperspace\\x1bcalculations\\x1bhave\\x1bbeen\\x1bcompleted.",
-                            "type": "regex"
+                            "pattern": "[Status]: Hyperspace calculations have been completed.",
+                            "type": "substring"
                      }
               ],
               "script": ""
@@ -101,8 +101,8 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "The\\x1bship\\x1blurches\\x1bslightly\\x1bas\\x1bit\\x1bcomes\\x1bout\\x1bof\\x1bhyperspace.",
-                            "type": "regex"
+                            "pattern": "The ship lurches slightly as it comes out of hyperspace.",
+                            "type": "substring"
                      }
               ],
               "script": ""
@@ -121,7 +121,7 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "You\\x1bbegin\\x1borbiting\\x1b(?\u003cplanet\u003e.*)\\x1b.",
+                            "pattern": "You begin orbiting (?<planet>.*).",
                             "type": "regex"
                      }
               ],
@@ -141,7 +141,7 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "^Possible\\x1bchoices\\x1bfor\\x1b(.*)$",
+                            "pattern": "^Possible choices for (.*)$",
                             "type": "regex"
                      }
               ],
@@ -161,11 +161,11 @@
                             "highlightBG": "#ffff00",
                             "patterns": [
                                    {
-                                          "pattern": "^(?\u003cpad\u003e.*?)\\x1b\\(Max\\:\\x1b(.*?)\\)$",
+                                          "pattern": "^(?<pad>.*?) \\(Max\\: (.*?)\\)$",
                                           "type": "regex"
                                    },
                                    {
-                                          "pattern": "^(?\u003cpad\u003e.*?)\\x1b\\(All\\x1bSizes\\)$",
+                                          "pattern": "^(?<pad>.*?) \\(All Sizes\\)$",
                                           "type": "regex"
                                    }
                             ],
@@ -187,8 +187,8 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "You\\x1bfeel\\x1ba\\x1bslight\\x1bthud\\x1bas\\x1bthe\\x1bship\\x1bsets\\x1bdown\\x1bon\\x1bthe\\x1bground.",
-                            "type": "regex"
+                            "pattern": "You feel a slight thud as the ship sets down on the ground.",
+                            "type": "substring"
                      }
               ],
               "script": ""
@@ -207,7 +207,7 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "You\\x1bare\\x1btoo\\x1bclose\\x1bto\\x1b(?\u003cplanet\u003e(.*))\\x1bto\\x1bmake\\x1bthe\\x1bjump\\x1bto\\x1blightspeed!",
+                            "pattern": "You are too close to (?<planet>(.*)) to make the jump to lightspeed!",
                             "type": "regex"
                      }
               ],
@@ -227,8 +227,8 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "Restricted\\x1bLanding\\x1bpad.\\x1bLimited\\x1bto\\x1bclans\\x1bmembers\\x1band\\x1bships\\x1bonly.",
-                            "type": "regex"
+                            "pattern": "Restricted Landing pad. Limited to clans members and ships only.",
+                            "type": "substring"
                      }
               ],
               "script": ""
@@ -247,16 +247,16 @@
               "highlightBG": "#ffff00",
               "patterns": [
                      {
-                            "pattern": "You\\x1bfail.",
-                            "type": "regex"
+                            "pattern": "You fail.",
+                            "type": "substring"
                      },
                      {
-                            "pattern": "You\\x1bcan't\\x1bfigure\\x1bout\\x1bwhat\\x1bthe\\x1breadout\\x1bmeans.",
-                            "type": "regex"
+                            "pattern": "You can't figure out what the readout means.",
+                            "type": "substring"
                      },
                      {
-                            "pattern": "You\\x1bfail\\x1bto\\x1bwork\\x1bthe\\x1bcontrols\\x1bproperly.",
-                            "type": "regex"
+                            "pattern": "You fail to work the controls properly.",
+                            "type": "substring"
                      }
               ],
               "script": ""
