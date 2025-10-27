@@ -16,6 +16,13 @@ autopilot.runningCargo = autopilot.runningCargo or false
 autopilot.useContraband = autopilot.useContraband or false
 autopilot.preferredPads = autopilot.preferredPads or {}
 
+-- Configuration
+shipdb.config = shipdb.config or {
+  -- Version settings
+  github_repo = "Xavious/AutoPilot",
+  update_check_done = false,
+}
+
 function autopilot.tableString(s)
   local t = {}
   for item in string.gmatch(s, '([^,]+)') do
@@ -2639,3 +2646,337 @@ function autopilot.displayStatusTab()
     autopilot.manifests and #autopilot.manifests or 0,
     autopilot.preferredPads and table.size(autopilot.preferredPads) or 0))
 end
+
+-- Get current installed version from package info
+function autopilot.getCurrentVersion()
+  local package_info = getPackageInfo("AutoPilot")
+  if package_info and package_info.version then
+    return package_info.version
+  end
+  return "unknown"
+end
+
+-- Version comparison function (semantic versioning)
+function autopilot.compareVersions(v1, v2)
+  -- Remove 'v' prefix if present
+  v1 = v1:gsub("^v", "")
+  v2 = v2:gsub("^v", "")
+
+  -- Split versions into parts
+  local v1_parts = {}
+  local v2_parts = {}
+
+  for num in v1:gmatch("%d+") do
+    table.insert(v1_parts, tonumber(num))
+  end
+
+  for num in v2:gmatch("%d+") do
+    table.insert(v2_parts, tonumber(num))
+  end
+
+  -- Compare each part
+  for i = 1, math.max(#v1_parts, #v2_parts) do
+    local v1_part = v1_parts[i] or 0
+    local v2_part = v2_parts[i] or 0
+
+    if v1_part < v2_part then
+      return -1  -- v1 is older
+    elseif v1_part > v2_part then
+      return 1   -- v1 is newer
+    end
+  end
+
+  return 0  -- versions are equal
+end
+
+-- Handle update check response
+function autopilot.handleUpdateCheck(event, filename)
+  -- Only handle our update check download
+  if not filename or not filename:match("autopilot_update_check%.json") then
+    return
+  end
+
+  -- Kill the event handler after first successful call
+  if autopilot.update_check_handler then
+    killAnonymousEventHandler(autopilot.update_check_handler)
+    autopilot.update_check_handler = nil
+  end
+
+  -- Read the downloaded JSON file
+  local file = io.open(filename, "r")
+  if not file then
+    cecho("\n[<cyan>AutoPilot<reset>] <red>Update check failed - could not retrieve version info<reset>\n")
+    return
+  end
+
+  local content = file:read("*all")
+  file:close()
+
+  -- Parse JSON to extract latest release tag
+  local latest_version = content:match('"tag_name"%s*:%s*"([^"]+)"')
+
+  if not latest_version then
+    cecho("\n[<cyan>AutoPilot<reset>] <red>Update check failed - could not parse version from GitHub<reset>\n")
+    return
+  end
+
+  -- Get current installed version
+  local current_version = autopilot.getCurrentVersion()
+
+  -- Compare versions
+  local comparison = autopilot.compareVersions(current_version, latest_version)
+
+  if comparison < 0 then
+    -- Update available
+    local download_url = content:match('"browser_download_url"%s*:%s*"([^"]+%.mpackage)"')
+    if not download_url then
+      -- No .mpackage found, just show release page
+      local release_url = string.format("https://github.com/%s/releases/latest", autopilot.config.github_repo)
+      cecho("\n[<cyan>AutoPilot<reset>] <green>Update available!<reset> <yellow>v" .. current_version .. "<reset> → <white>" .. latest_version .. "<reset>\n")
+      cecho("[<cyan>AutoPilot<reset>] Download from: <cyan>" .. release_url .. "<reset>\n")
+      return
+    end
+
+    -- Store the download info
+    autopilot.pending_update = {
+      version = latest_version,
+      url = download_url
+    }
+
+    -- Show update popup
+    autopilot.showUpdatePopup(current_version, latest_version)
+  else
+    cecho("\n[<cyan>AutoPilot<reset>] You are running the latest version (<white>v" .. current_version .. "<reset>)\n")
+  end
+end
+
+-- Show update popup with Yes/No buttons
+function autopilot.showUpdatePopup(current_version, latest_version)
+  -- Close existing popup if any
+  if autopilot.update_popup then
+    autopilot.update_popup:hide()
+    autopilot.update_popup = nil
+  end
+
+  -- Create background overlay as a Label (supports setStyleSheet)
+  autopilot.update_popup = Geyser.Label:new({
+    name = "autopilot_update_popup",
+    x = "0", y = "0",
+    width = "100%", height = "100%",
+  })
+
+  autopilot.update_popup:setStyleSheet([[
+    background-color: rgba(0, 0, 0, 180);
+  ]])
+
+  -- Create the dialog box (centered within the overlay)
+  -- Using percentage with offset: 50% minus half the width/height
+  autopilot.update_dialog = Geyser.Label:new({
+    name = "autopilot_update_dialog",
+    x = "40%", y = "40%",
+    width = "500px", height = "300px",
+  }, autopilot.update_popup)
+
+  autopilot.update_dialog:setStyleSheet([[
+    background-color: rgb(47, 49, 54);
+    border: 2px solid rgb(100, 105, 115);
+    border-radius: 10px;
+  ]])
+
+  -- Title
+  local title = Geyser.Label:new({
+    name = "autopilot_update_title",
+    x = 0, y = "10px",
+    width = "100%", height = "40px",
+  }, autopilot.update_dialog)
+
+  title:setStyleSheet([[
+    background-color: transparent;
+    color: rgb(88, 214, 141);
+    font-size: 18pt;
+    font-weight: bold;
+    qproperty-alignment: 'AlignCenter';
+  ]])
+  title:echo("AutoPilot Update Available!")
+
+  -- Message
+  local message = Geyser.Label:new({
+    name = "autopilot_update_message",
+    x = "20px", y = "60px",
+    width = "460px", height = "120px",
+  }, autopilot.update_dialog)
+
+  message:setStyleSheet([[
+    background-color: transparent;
+    color: rgb(220, 220, 220);
+    font-size: 12pt;
+    qproperty-alignment: 'AlignCenter';
+    qproperty-wordWrap: true;
+  ]])
+
+  local msg_text = string.format([[<p style="text-align: center; line-height: 1.5;">
+Current Version: v%s<br/>
+Latest Version: %s<br/>
+<br/>
+Would you like to download and install it now?
+</p>]], current_version, latest_version)
+  message:echo(msg_text)
+
+  -- Yes button
+  local yes_button = Geyser.Label:new({
+    name = "autopilot_update_yes",
+    x = "80px", y = "220px",
+    width = "150px", height = "50px",
+  }, autopilot.update_dialog)
+
+  yes_button:setStyleSheet([[
+    QLabel {
+      background-color: rgb(88, 214, 141);
+      border: 1px solid rgb(70, 180, 120);
+      border-radius: 5px;
+      color: rgb(0, 0, 0);
+      font-size: 14pt;
+      font-weight: bold;
+      qproperty-alignment: 'AlignCenter';
+    }
+    QLabel:hover {
+      background-color: rgb(100, 230, 160);
+    }
+  ]])
+  yes_button:echo("Yes")
+  yes_button:setClickCallback(function()
+    if autopilot.update_popup then
+      autopilot.update_popup:hide()
+      autopilot.update_popup = nil
+    end
+    autopilot.confirmUpdateInstall()
+  end)
+
+  -- No button
+  local no_button = Geyser.Label:new({
+    name = "autopilot_update_no",
+    x = "270px", y = "220px",
+    width = "150px", height = "50px",
+  }, autopilot.update_dialog)
+
+  no_button:setStyleSheet([[
+    QLabel {
+      background-color: rgb(64, 68, 75);
+      border: 1px solid rgb(100, 105, 115);
+      border-radius: 5px;
+      color: rgb(220, 220, 220);
+      font-size: 14pt;
+      font-weight: bold;
+      qproperty-alignment: 'AlignCenter';
+    }
+    QLabel:hover {
+      background-color: rgb(80, 85, 95);
+    }
+  ]])
+  no_button:echo("No")
+  no_button:setClickCallback(function()
+    if autopilot.update_popup then
+      autopilot.update_popup:hide()
+      autopilot.update_popup = nil
+    end
+    cecho("\n[<cyan>AutoPilot<reset>] Update cancelled. Run <white>autopilot update<reset> again later to install.\n")
+    autopilot.pending_update = nil
+  end)
+end
+
+-- Confirm and start the update installation
+function autopilot.confirmUpdateInstall()
+  if not autopilot.pending_update then
+    return
+  end
+
+  local version = autopilot.pending_update.version
+  local url = autopilot.pending_update.url
+  local filename = getMudletHomeDir() .. "/AutoPilot_" .. version .. ".mpackage"
+
+  cecho("\n[<cyan>AutoPilot<reset>] Downloading <white>" .. version .. "<reset>...\n")
+
+  -- Register event handler for download completion
+  if autopilot.install_handler then
+    killAnonymousEventHandler(autopilot.install_handler)
+  end
+  autopilot.install_handler = registerAnonymousEventHandler("sysDownloadDone", "autopilot.handleInstallDownload")
+
+  -- Store the filename for the handler
+  autopilot.install_filename = filename
+
+  -- Download the package
+  downloadFile(filename, url)
+end
+
+-- Handle the downloaded package
+function autopilot.handleInstallDownload(event, filename)
+  -- Only handle our install download
+  if not filename or filename ~= autopilot.install_filename then
+    return
+  end
+
+  -- Kill the event handler
+  if autopilot.install_handler then
+    killAnonymousEventHandler(autopilot.install_handler)
+    autopilot.install_handler = nil
+  end
+
+  cecho("\n[<cyan>AutoPilot<reset>] <green>Download complete!<reset> Installing package...\n")
+
+  -- Uninstall old version first for clean update
+  uninstallPackage("AutoPilot")
+
+  -- Install the new package and check result
+  local success = installPackage(filename)
+
+  if success then
+    cecho("[<cyan>AutoPilot<reset>] <green>Installation complete!<reset> The updated package is now active.\n")
+    cecho("[<cyan>AutoPilot<reset>] <yellow>Note:<reset> If you experience issues, try reloading your profile.\n")
+  else
+    cecho("[<cyan>AutoPilot<reset>] <red>Installation failed!<reset> Please try downloading manually from:\n")
+    cecho("[<cyan>AutoPilot<reset>] <cyan>https://github.com/" .. autopilot.config.github_repo .. "/releases/latest<reset>\n")
+  end
+
+  -- Clear pending update
+  autopilot.pending_update = nil
+  autopilot.install_filename = nil
+end
+
+-- Check for updates from GitHub
+function autopilot.checkForUpdates(force)
+  if not force and autopilot.config.update_check_done then
+    return  -- Only check once per session unless forced
+  end
+
+  autopilot.config.update_check_done = true
+
+  local api_url = string.format("https://api.github.com/repos/%s/releases/latest", autopilot.config.github_repo)
+  local temp_file = getMudletHomeDir() .. "/autopilot_update_check.json"
+
+  -- Register event handler for download completion
+  if autopilot.update_check_handler then
+    killAnonymousEventHandler(autopilot.update_check_handler)
+  end
+  autopilot.update_check_handler = registerAnonymousEventHandler("sysDownloadDone", "autopilot.handleUpdateCheck")
+
+  -- Download the GitHub API response
+  downloadFile(temp_file, api_url)
+end
+
+-- Manual update check (can be called anytime by user)
+function autopilot.manualUpdateCheck()
+  cecho("\n[<cyan>AutoPilot<reset>] Checking for updates...\n")
+  autopilot.checkForUpdates(true)  -- Force check
+end
+
+-- Register event handler for character changes (persistent, not one-shot)
+if autopilot.eventid == nil then
+  autopilot.eventid = registerAnonymousEventHandler("gmcp.Char.Info", autopilot.load)
+  autopilot.debug("Registered event handler for gmcp.Char.Info")
+end
+
+-- Check for updates on load (once per session)
+autopilot.checkForUpdates(false)
+
+echo("PROBALBY DIDN'T UDPATE")
