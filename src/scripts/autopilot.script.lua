@@ -1476,23 +1476,18 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
   local delivery = deliveryIndex and manifest.deliveries[deliveryIndex] or {}
   local isEdit = deliveryIndex ~= nil
 
-  -- Build route options string
-  local routeOptions = "0 (Direct)"
-  if autopilot.routes and #autopilot.routes > 0 then
-    for i, route in ipairs(autopilot.routes) do
-      routeOptions = routeOptions .. ", " .. i .. " (" .. (route.name or "Route #" .. i) .. ")"
-    end
-  end
-
   -- Get the onSave callback from current view if it exists
   local onSave = autopilot.gui.currentView and autopilot.gui.currentView.onSave
 
+  -- Store selected route (nil for direct, number for route index)
+  local selectedRoute = delivery.route or nil
+
+  -- Use showForm for planet and resource only
   autopilot.showForm(
     isEdit and "EDIT DELIVERY" or "ADD DELIVERY",
     {
       {name = "planet", label = "Planet", value = delivery.planet or ""},
-      {name = "resource", label = "Resource", value = delivery.resource or ""},
-      {name = "route", label = "Route (0 for direct)", value = delivery.route and tostring(delivery.route) or "0"}
+      {name = "resource", label = "Resource", value = delivery.resource or ""}
     },
     function(values)
       -- Validate required fields
@@ -1505,14 +1500,13 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
         return
       end
 
-      -- Parse route (0 means direct/no route)
-      local routeNum = tonumber(values.route) or 0
+      -- Build delivery object
       local newDelivery = {
         planet = values.planet,
         resource = values.resource
       }
-      if routeNum > 0 then
-        newDelivery.route = routeNum
+      if selectedRoute ~= nil then
+        newDelivery.route = selectedRoute
       end
 
       -- Call the save callback
@@ -1522,8 +1516,97 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
     end
   )
 
-  -- Show available routes as hint at bottom of form
-  cecho("\n[<cyan>AutoPilot<reset>] Available routes: " .. routeOptions .. "\n")
+  -- Now add the route flyout dropdown after the resource field
+  local yPos = 120 + (45 * 2)  -- After title and 2 fields
+
+  -- Route label
+  local routeLabel = Geyser.Label:new({
+    x = 20, y = yPos,
+    width = 150, height = 30
+  }, autopilot.gui.formContainer)
+  routeLabel:setStyleSheet([[
+    background-color: transparent;
+    color: ]]..autopilot.gui.colors.text..[[;
+    font-size: 12pt;
+    qproperty-alignment: 'AlignVCenter|AlignLeft';
+  ]])
+  routeLabel:echo("Route:")
+  table.insert(autopilot.gui.formData.uiElements, routeLabel)
+
+  -- Function to get display text for selected route
+  local function getRouteDisplayText()
+    if selectedRoute == nil then
+      return "(Direct)"
+    else
+      local route = autopilot.routes[selectedRoute]
+      return route and (route.name or ("Route #" .. selectedRoute)) or "(Direct)"
+    end
+  end
+
+  -- Create flyout dropdown for route selection
+  local routeDropdown = Geyser.Label:new({
+    x = 180, y = yPos,
+    width = "60%", height = 30,
+    nestable = true
+  }, autopilot.gui.formContainer)
+  routeDropdown:setStyleSheet([[
+    background-color: ]]..autopilot.gui.colors.background..[[;
+    border: 1px solid ]]..autopilot.gui.colors.border..[[;
+    color: ]]..autopilot.gui.colors.text..[[;
+    font-size: 12pt;
+    padding: 5px;
+  ]])
+  routeDropdown:echo(getRouteDisplayText())
+  table.insert(autopilot.gui.formData.uiElements, routeDropdown)
+
+  -- Function to update dropdown text
+  local function updateDropdownText()
+    routeDropdown:echo(getRouteDisplayText())
+  end
+
+  -- Add "(Direct)" option
+  local directOption = Geyser.Label:new({
+    x = 0, y = 0,
+    width = "100%", height = 30,
+    flyOut = true
+  }, routeDropdown)
+  directOption:setStyleSheet([[
+    background-color: ]]..autopilot.gui.colors.background..[[;
+    border: 1px solid ]]..autopilot.gui.colors.border..[[;
+    color: ]]..autopilot.gui.colors.text..[[;
+    font-size: 12pt;
+    padding: 5px;
+  ]])
+  directOption:echo("(Direct)")
+  directOption:setClickCallback(function()
+    selectedRoute = nil
+    updateDropdownText()
+  end)
+  routeDropdown:addChild(directOption, "RV")
+
+  -- Add route options
+  if autopilot.routes and #autopilot.routes > 0 then
+    for i, route in ipairs(autopilot.routes) do
+      local routeOption = Geyser.Label:new({
+        x = 0, y = 0,
+        width = "100%", height = 30,
+        flyOut = true
+      }, routeDropdown)
+      routeOption:setStyleSheet([[
+        background-color: ]]..autopilot.gui.colors.background..[[;
+        border: 1px solid ]]..autopilot.gui.colors.border..[[;
+        color: ]]..autopilot.gui.colors.text..[[;
+        font-size: 12pt;
+        padding: 5px;
+      ]])
+      routeOption:echo(route.name or ("Route #" .. i))
+      routeOption:setClickCallback(function()
+        selectedRoute = i
+        updateDropdownText()
+      end)
+      routeDropdown:addChild(routeOption, "RV")
+    end
+  end
 end
 
 -- Refresh manifest editor display
@@ -1534,9 +1617,9 @@ function autopilot.refreshManifestEditor()
 
   local manifest = autopilot.gui.workingManifest
   local deliveries = manifest.deliveries or {}
-  local console = autopilot.gui.manifestEditor.displayConsole
+  local console = autopilot.gui.content
 
-  -- Clear and update the display console
+  -- Clear and update the display
   console:clear()
 
   -- Manifest name section with edit button
@@ -1569,6 +1652,27 @@ function autopilot.refreshManifestEditor()
       console:cecho("\n\n")
     end
   end
+
+  -- Action buttons separator
+  console:cecho("\n<cyan>═══════════════════════════════════════════════════════════════\n\n")
+
+  -- Add Delivery button
+  console:fg("green")
+  console:echoLink("[+ Add Delivery]", [[autopilot.addDeliveryToManifest()]], "Add a new delivery to this manifest", true)
+  console:resetFormat()
+  console:cecho("  ")
+
+  -- Save button
+  console:fg("green")
+  console:echoLink("[Save]", [[autopilot.saveManifestFromEditor()]], "Save this manifest", true)
+  console:resetFormat()
+  console:cecho("  ")
+
+  -- Cancel button
+  console:fg("red")
+  console:echoLink("[Cancel]", [[autopilot.cancelManifestEditor()]], "Cancel editing and discard changes", true)
+  console:resetFormat()
+  console:cecho("\n")
 end
 
 -- Edit manifest name
@@ -1610,6 +1714,50 @@ function autopilot.showManifestNameForm()
       end)
     end
   )
+end
+
+-- Save manifest from editor
+function autopilot.saveManifestFromEditor()
+  if not autopilot.gui.workingManifest then
+    cecho("\n[<cyan>AutoPilot<reset>] <red>Error: No active manifest.\n")
+    return
+  end
+
+  local isEdit = autopilot.gui.manifestEditor and autopilot.gui.manifestEditor.isEdit
+  local manifestIndex = autopilot.gui.workingManifestIndex
+
+  -- Validate manifest name
+  if not autopilot.gui.workingManifest.name or autopilot.gui.workingManifest.name == "" then
+    cecho("\n[<cyan>AutoPilot<reset>] <red>Manifest name is required.\n")
+    return
+  end
+
+  if #autopilot.gui.workingManifest.deliveries == 0 then
+    cecho("\n[<cyan>AutoPilot<reset>] <red>At least one delivery is required.\n")
+    return
+  end
+
+  -- Save manifest
+  if isEdit then
+    autopilot.manifests[manifestIndex] = autopilot.gui.workingManifest
+    cecho("\n[<cyan>AutoPilot<reset>] Manifest <cyan>"..autopilot.gui.workingManifest.name.."<reset> updated.\n")
+  else
+    table.insert(autopilot.manifests, autopilot.gui.workingManifest)
+    cecho("\n[<cyan>AutoPilot<reset>] Manifest <cyan>"..autopilot.gui.workingManifest.name.."<reset> added.\n")
+  end
+
+  table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
+  autopilot.gui.manifestEditor = nil
+  autopilot.gui.workingManifest = nil
+  autopilot.popView()
+end
+
+-- Cancel manifest editor
+function autopilot.cancelManifestEditor()
+  autopilot.gui.manifestEditor = nil
+  autopilot.gui.workingManifest = nil
+  cecho("\n[<cyan>AutoPilot<reset>] Manifest editing cancelled.\n")
+  autopilot.popView()
 end
 
 -- Add delivery to working manifest
@@ -1683,126 +1831,21 @@ function autopilot.showManifestEditor(manifestIndex)
 
   local isEdit = manifestIndex ~= nil
 
-  -- Only create a new working manifest if one doesn't exist
-  -- This preserves edits when returning from sub-forms
-  if not autopilot.gui.workingManifest then
-    local manifest = manifestIndex and table.deepcopy(autopilot.manifests[manifestIndex]) or {name = "", deliveries = {}}
-    autopilot.gui.workingManifest = manifest
-    autopilot.gui.workingManifestIndex = manifestIndex
-  end
+  -- Always create a fresh working manifest
+  local manifest = manifestIndex and table.deepcopy(autopilot.manifests[manifestIndex]) or {name = "", deliveries = {}}
+  autopilot.gui.workingManifest = manifest
+  autopilot.gui.workingManifestIndex = manifestIndex
 
-  -- Switch to form container
-  autopilot.gui.content:hide()
-  autopilot.gui.formContainer:show()
-
-  -- Title label
-  local titleLabel = Geyser.Label:new({
-    x = 0, y = 0,
-    width = "100%", height = 60
-  }, autopilot.gui.formContainer)
-  titleLabel:setStyleSheet([[
-    background-color: transparent;
-    color: ]]..autopilot.gui.colors.text..[[;
-    font-size: 14pt;
-    font-weight: bold;
-    qproperty-alignment: 'AlignHCenter|AlignVCenter';
-  ]])
-  titleLabel:echo(isEdit and "EDIT MANIFEST" or "ADD MANIFEST")
-
-  -- Main display console (for manifest name and delivery list)
-  local displayConsole = Geyser.MiniConsole:new({
-    x = 20, y = 80,
-    width = "94%", height = 400,
-    autoWrap = true,
-    scrollBar = true
-  }, autopilot.gui.formContainer)
-  displayConsole:setColor(47, 49, 54)
-
-  -- Add Delivery button
-  local addBtn = Geyser.Label:new({
-    x = 20, y = 500,
-    width = 150, height = 40
-  }, autopilot.gui.formContainer)
-  addBtn:setStyleSheet([[
-    background-color: #2d5016;
-    border: 1px solid #4a7c29;
-    color: #a3d977;
-    font-size: 12pt;
-    font-weight: bold;
-    qproperty-alignment: 'AlignCenter';
-  ]])
-  addBtn:echo("[+ Add Delivery]")
-  addBtn:setClickCallback(function() autopilot.addDeliveryToManifest() end)
-
-  -- Save button
-  local saveBtn = Geyser.Label:new({
-    x = 190, y = 500,
-    width = 120, height = 40
-  }, autopilot.gui.formContainer)
-  saveBtn:setStyleSheet([[
-    background-color: #2d5016;
-    border: 1px solid #4a7c29;
-    color: #a3d977;
-    font-size: 12pt;
-    font-weight: bold;
-    qproperty-alignment: 'AlignCenter';
-  ]])
-  saveBtn:echo("Save")
-  saveBtn:setClickCallback(function()
-    -- Validate manifest name
-    if not autopilot.gui.workingManifest.name or autopilot.gui.workingManifest.name == "" then
-      cecho("\n[<cyan>AutoPilot<reset>] <red>Manifest name is required.\n")
-      return
-    end
-
-    if #autopilot.gui.workingManifest.deliveries == 0 then
-      cecho("\n[<cyan>AutoPilot<reset>] <red>At least one delivery is required.\n")
-      return
-    end
-
-    -- Save manifest
-    if isEdit then
-      autopilot.manifests[manifestIndex] = autopilot.gui.workingManifest
-      cecho("\n[<cyan>AutoPilot<reset>] Manifest <cyan>"..autopilot.gui.workingManifest.name.."<reset> updated.\n")
-    else
-      table.insert(autopilot.manifests, autopilot.gui.workingManifest)
-      cecho("\n[<cyan>AutoPilot<reset>] Manifest <cyan>"..autopilot.gui.workingManifest.name.."<reset> added.\n")
-    end
-
-    table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
-    autopilot.gui.manifestEditor = nil
-    autopilot.gui.workingManifest = nil
-    autopilot.popView()
-  end)
-
-  -- Cancel button
-  local cancelBtn = Geyser.Label:new({
-    x = 330, y = 500,
-    width = 120, height = 40
-  }, autopilot.gui.formContainer)
-  cancelBtn:setStyleSheet([[
-    background-color: #4a1616;
-    border: 1px solid #7c2929;
-    color: #d97777;
-    font-size: 12pt;
-    font-weight: bold;
-    qproperty-alignment: 'AlignCenter';
-  ]])
-  cancelBtn:echo("Cancel")
-  cancelBtn:setClickCallback(function()
-    autopilot.gui.manifestEditor = nil
-    autopilot.gui.workingManifest = nil
-    cecho("\n[<cyan>AutoPilot<reset>] Manifest editing cancelled.\n")
-    autopilot.popView()
-  end)
-
-  -- Store references with UI elements
+  -- Store references
   autopilot.gui.manifestEditor = {
-    displayConsole = displayConsole,
     isEdit = isEdit,
-    manifestIndex = manifestIndex,
-    uiElements = {titleLabel, displayConsole, addBtn, saveBtn, cancelBtn}
+    manifestIndex = manifestIndex
   }
+
+  -- Use the main content MiniConsole instead of creating a new one
+  autopilot.gui.formContainer:hide()
+  autopilot.gui.content:show()
+  autopilot.gui.content:clear()
 
   -- Initial display
   autopilot.refreshManifestEditor()
