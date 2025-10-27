@@ -890,7 +890,7 @@ function autopilot.trigger.orbit()
   local preferredPad = autopilot.getPreferredPad(planet)
 
   if preferredPad then
-    cecho("[<cyan>AutoPilot<reset>] Using preferred pad for <cyan>"..planet.."<reset>: <yellow>"..preferredPad.."<reset>\n")
+    cecho("\n[<cyan>AutoPilot<reset>] Using preferred pad for <cyan>"..planet.."<reset>: <yellow>"..preferredPad.."<reset>\n")
     send("land '"..planet.."' "..preferredPad)
   else
     autopilot.destination.landIndex = 1
@@ -2576,9 +2576,31 @@ function autopilot.displayStatusTab()
   autopilot.gui.content:resetFormat()
   autopilot.gui.content:cecho("\n\n")
 
+  -- Flight Progress Section
+  autopilot.gui.content:cecho("<white>Flight Progress:\n")
+
+  -- Current destination
   if autopilot.destination and autopilot.destination.planet then
-    autopilot.gui.content:cecho(string.format("  <white>Current Destination: <green>%s<white>\n",  autopilot.destination.planet))
+    autopilot.gui.content:cecho("  <white>Current Destination: <green>➜ " .. autopilot.destination.planet .. "<white>\n")
+  else
+    autopilot.gui.content:cecho("  <white>Current Destination: <gray>(none)<white>\n")
   end
+
+  -- Waypoints
+  if autopilot.waypoints and #autopilot.waypoints > 0 then
+    autopilot.gui.content:cecho("  <white>Remaining Waypoints:\n")
+    for i, waypoint in ipairs(autopilot.waypoints) do
+      if i == #autopilot.waypoints then
+        -- Final destination
+        autopilot.gui.content:cecho("    <white>" .. i .. ". <yellow>★ " .. waypoint .. " <gray>(Final Destination)<white>\n")
+      else
+        autopilot.gui.content:cecho("    <white>" .. i .. ". <cyan>" .. waypoint .. "<white>\n")
+      end
+    end
+  elseif autopilot.destination and autopilot.destination.planet then
+    autopilot.gui.content:cecho("  <white>Remaining Waypoints: <yellow>★ Final Destination<white>\n")
+  end
+
   autopilot.gui.content:cecho("\n")
 
   -- Settings
