@@ -198,7 +198,7 @@ function autopilot.alias.status()
   local flightEnabled = isActive("autopilot.flight", "trigger")
 
   cecho("<green>Flight AutoPilot:<reset> ")
-  if flightEnabled then
+  if flightEnabled > 0 then
     cecho("<green>ENABLED ✓<reset>\n")
   else
     cecho("<red>DISABLED ✗<reset>\n")
@@ -305,6 +305,36 @@ function autopilot.alias.fly()
   autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
 
   cecho("[<cyan>AutoPilot<reset>] <yellow>Engaged<reset> | <green>Destination:<reset> <cyan>"..autopilot.destination.planet.."<reset>\n")
+  enableTrigger("autopilot.flight")
+  autopilot.openShip()
+end
+
+-- Fly a route by index (used by GUI)
+function autopilot.flyRoute(routeIndex)
+  if not autopilot.routes or not autopilot.routes[routeIndex] then
+    cecho("[<cyan>AutoPilot<reset>] <red>Invalid route index.<reset>\n")
+    return
+  end
+
+  local route = autopilot.routes[routeIndex]
+  if not route.planets or #route.planets == 0 then
+    cecho("[<cyan>AutoPilot<reset>] <red>Route has no planets.<reset>\n")
+    return
+  end
+
+  -- Load the route as current route
+  autopilot.currentRoute = table.deepcopy(route)
+  local routeName = route.name or ("Route #" .. routeIndex)
+  cecho("[<cyan>AutoPilot<reset>] Route <cyan>" .. routeName .. "<reset> loaded.\n")
+
+  -- Set up waypoints from route
+  autopilot.waypoints = table.deepcopy(route.planets)
+  autopilot.destination = {}
+  autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
+
+  cecho("[<cyan>AutoPilot<reset>] <yellow>Flying route:<reset> <cyan>" .. routeName .. "<reset>\n")
+  cecho("[<cyan>AutoPilot<reset>] <yellow>Engaged<reset> | <green>Destination:<reset> <cyan>"..autopilot.destination.planet.."<reset>\n")
+
   enableTrigger("autopilot.flight")
   autopilot.openShip()
 end
@@ -2342,6 +2372,10 @@ function autopilot.displayRoutesTab()
 
     -- Action buttons
     autopilot.gui.content:cecho("    <white>Actions: ")
+    autopilot.gui.content:fg("cyan")
+    autopilot.gui.content:echoLink("[Fly To]", [[autopilot.flyRoute(]] .. i .. [[)]], "Fly this route", true)
+    autopilot.gui.content:fg("white")
+    autopilot.gui.content:cecho(" ")
     autopilot.gui.content:fg("green")
     autopilot.gui.content:echoLink("[Load]", [[autopilot.alias.loadRoute(]] .. i .. [[)]], "Load this route", true)
     autopilot.gui.content:fg("white")
@@ -2530,12 +2564,21 @@ function autopilot.displayStatusTab()
   end
 
   -- Autopilot status
+ -- Show autopilot status
+  local flightEnabled = isActive("autopilot.flight", "trigger")
+
   autopilot.gui.content:cecho("<white>Autopilot Status:\n")
   if autopilot.runningCargo then
-    autopilot.gui.content:cecho("  <green>● RUNNING CARGO<white>\n")
+    autopilot.gui.content:cecho("  <green>● ACTIVE (RUNNING CARGO)<white>\n\n")
+  elseif flightEnabled > 0 then
+    autopilot.gui.content:cecho("  <green>● ACTIVE<white>\n\n")
   else
-    autopilot.gui.content:cecho("  <red>○ Idle<white>\n")
+    autopilot.gui.content:cecho("  <red>○ Idle<white>\n\n")
   end
+
+  if autopilot.destination.planet then
+    autopilot.gui.content:cecho(string.format("<white>Current Destination: <green>%s<white>\n",  autopilot.destination.planet))
+  end 
   autopilot.gui.content:cecho("\n")
 
   -- Settings
