@@ -1517,12 +1517,13 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
   )
 
   -- Now add the route flyout dropdown after the resource field
-  local yPos = 120 + (45 * 2)  -- After title and 2 fields
+  -- After 2 fields: 18% + (8% * 2) = 34%
+  local yPos = 34
 
   -- Route label
   local routeLabel = Geyser.Label:new({
-    x = 20, y = yPos,
-    width = 150, height = 30
+    x = "3%", y = yPos .. "%",
+    width = "20%", height = "5%"
   }, autopilot.gui.formContainer)
   routeLabel:setStyleSheet([[
     background-color: transparent;
@@ -1545,8 +1546,8 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
 
   -- Create flyout dropdown for route selection
   local routeDropdown = Geyser.Label:new({
-    x = 180, y = yPos,
-    width = "60%", height = 30,
+    x = "25%", y = yPos .. "%",
+    width = "60%", height = "5%",
     nestable = true
   }, autopilot.gui.formContainer)
   routeDropdown:setStyleSheet([[
@@ -1567,7 +1568,7 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
   -- Add "(Direct)" option
   local directOption = Geyser.Label:new({
     x = 0, y = 0,
-    width = "100%", height = 30,
+    width = "100%", height = "5%",
     flyOut = true
   }, routeDropdown)
   directOption:setStyleSheet([[
@@ -1582,14 +1583,14 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
     selectedRoute = nil
     updateDropdownText()
   end)
-  routeDropdown:addChild(directOption, "RV")
+  routeDropdown:addChild(directOption, "BV")
 
   -- Add route options
   if autopilot.routes and #autopilot.routes > 0 then
     for i, route in ipairs(autopilot.routes) do
       local routeOption = Geyser.Label:new({
         x = 0, y = 0,
-        width = "100%", height = 30,
+        width = "100%", height = "5%",
         flyOut = true
       }, routeDropdown)
       routeOption:setStyleSheet([[
@@ -1604,9 +1605,10 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
         selectedRoute = i
         updateDropdownText()
       end)
-      routeDropdown:addChild(routeOption, "RV")
+      routeDropdown:addChild(routeOption, "BV")
     end
   end
+
 end
 
 -- Refresh manifest editor display
@@ -1986,8 +1988,8 @@ function autopilot.showForm(title, fields, onSave, onCancel)
 
   -- Title label
   local titleLabel = Geyser.Label:new({
-    x = 0, y = 0,
-    width = "100%", height = 100
+    x = "0%", y = "0%",
+    width = "100%", height = "15%"
   }, autopilot.gui.formContainer)
   titleLabel:setStyleSheet([[
     background-color: transparent;
@@ -2008,12 +2010,12 @@ function autopilot.showForm(title, fields, onSave, onCancel)
   }
 
   -- Create input fields
-  local yPos = 120
+  local yPos = 18  -- Starting at 18% (after 15% title + 3% spacing)
   for i, field in ipairs(fields) do
     -- Label
     local label = Geyser.Label:new({
-      x = 20, y = yPos,
-      width = 150, height = 30
+      x = "3%", y = yPos .. "%",
+      width = "20%", height = "5%"
     }, autopilot.gui.formContainer)
     label:setStyleSheet([[
       background-color: transparent;
@@ -2026,8 +2028,8 @@ function autopilot.showForm(title, fields, onSave, onCancel)
 
     -- Input field
     local input = Geyser.CommandLine:new({
-      x = 180, y = yPos,
-      width = "60%", height = 30
+      x = "25%", y = yPos .. "%",
+      width = "60%", height = "5%"
     }, autopilot.gui.formContainer)
     if field.value and field.value ~= "" then
       input:print(field.value)
@@ -2035,13 +2037,13 @@ function autopilot.showForm(title, fields, onSave, onCancel)
 
     autopilot.gui.formData.inputs[field.name] = input
     table.insert(autopilot.gui.formData.uiElements, input)
-    yPos = yPos + 45
+    yPos = yPos + 8  -- 5% field + 3% spacing
   end
 
   -- Save button
   local saveBtn = Geyser.Label:new({
-    x = 20, y = yPos + 20,
-    width = 120, height = 40
+    x = "31%", y = "-25%",
+    width = "18%", height = "7%"
   }, autopilot.gui.formContainer)
   saveBtn:setStyleSheet([[
     background-color: #2d5016;
@@ -2059,8 +2061,8 @@ function autopilot.showForm(title, fields, onSave, onCancel)
 
   -- Cancel button
   local cancelBtn = Geyser.Label:new({
-    x = 160, y = yPos + 20,
-    width = 120, height = 40
+    x = "51%", y = "-25%",
+    width = "18%", height = "7%"
   }, autopilot.gui.formContainer)
   cancelBtn:setStyleSheet([[
     background-color: #4a1616;
