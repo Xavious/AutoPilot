@@ -195,6 +195,23 @@ function autopilot.alias.help()
   cecho("   Toggle contraband mode (uses buycontraband/sellcontraband commands).\n")
   cecho("   <red>⚠ WARNING: Requires level 120 Smuggling skill. May have in-game consequences.<reset>\n\n")
   cecho("<white>------------------------------------------------------------<reset>\n")
+
+ -- GUI Commands
+  cecho("<cyan>GUI COMMANDS<reset>\n")
+  cecho("<white>------------------------------------------------------------\n")
+  cecho("<yellow>ap gui<reset>\n")
+  cecho("   Show the visual interface\n\n")
+  cecho("<yellow>ap show<reset>\n")
+  cecho("   Show the visual interface\n\n")
+  cecho("<yellow>ap hide<reset>\n")
+  cecho("   Hide the visual interface\n\n")
+
+   -- Update
+  cecho("<cyan>UPDATE COMMANDS<reset>\n")
+  cecho("<white>------------------------------------------------------------\n")
+  cecho("<yellow>ap update<reset>\n")
+  cecho("   Check for updates\n\n")
+
 end
 
 function autopilot.alias.status()
