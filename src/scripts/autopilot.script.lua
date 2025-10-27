@@ -1539,12 +1539,8 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
         planet = values.planet,
         resource = values.resource
       }
-      cecho("\n[<cyan>AutoPilot<reset>] DEBUG: Save clicked, selectedRoute = " .. tostring(selectedRoute) .. "\n")
       if selectedRoute ~= nil then
         newDelivery.route = selectedRoute
-        cecho("\n[<cyan>AutoPilot<reset>] DEBUG: Added route " .. selectedRoute .. " to delivery\n")
-      else
-        cecho("\n[<cyan>AutoPilot<reset>] DEBUG: No route (direct flight)\n")
       end
 
       -- Call the save callback
@@ -1628,7 +1624,6 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
     routeConsole:fg("green")
     routeConsole:echoLink("[Direct]", function()
       selectedRoute = nil
-      cecho("\n[<cyan>AutoPilot<reset>] DEBUG: selectedRoute set to nil\n")
       refreshRouteConsole()
     end, "Direct flight (no route)", true)
     routeConsole:resetFormat()
@@ -1641,7 +1636,6 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
         routeConsole:fg("yellow")
         routeConsole:echoLink("[" .. routeLabel .. "]", function()
           selectedRoute = i
-          cecho("\n[<cyan>AutoPilot<reset>] DEBUG: selectedRoute set to " .. i .. "\n")
           refreshRouteConsole()
         end, "Select " .. routeLabel, true)
         routeConsole:resetFormat()
@@ -1691,12 +1685,6 @@ function autopilot.refreshManifestEditor()
   -- Ensure form container is hidden and content is shown
   autopilot.gui.formContainer:hide()
   autopilot.gui.content:show()
-
-  -- DEBUG: Check what's in workingManifest
-  cecho("\n[<cyan>AutoPilot<reset>] DEBUG: refreshManifestEditor - manifest.name = '" .. tostring(manifest.name) .. "'\n")
-  if #deliveries > 0 then
-    cecho("\n[<cyan>AutoPilot<reset>] DEBUG: refreshManifestEditor - deliveries[1].route = " .. tostring(deliveries[1].route) .. "\n")
-  end
 
   -- Clear and update the display
   console:clear()
@@ -1783,7 +1771,6 @@ function autopilot.showManifestNameForm()
 
       -- Update both the saved manifest AND the working copy
       local manifestIndex = autopilot.gui.workingManifestIndex
-      cecho("\n[<cyan>AutoPilot<reset>] DEBUG: manifestIndex = " .. tostring(manifestIndex) .. ", name = '" .. values.name .. "'\n")
       if manifestIndex then
         -- Editing existing manifest - update saved copy and save to disk
         autopilot.manifests[manifestIndex].name = values.name
@@ -1793,7 +1780,6 @@ function autopilot.showManifestNameForm()
       else
         -- Adding new manifest - only update working copy, will save when clicking Save button
         autopilot.gui.workingManifest.name = values.name
-        cecho("\n[<cyan>AutoPilot<reset>] DEBUG: workingManifest.name is now '" .. tostring(autopilot.gui.workingManifest.name) .. "'\n")
         cecho("\n[<cyan>AutoPilot<reset>] Manifest name updated (not saved yet - click Save to persist).\n")
       end
     end,
@@ -1888,20 +1874,16 @@ function autopilot.editDeliveryInManifest(deliveryIndex)
       return
     end
 
-    cecho("\n[<cyan>AutoPilot<reset>] DEBUG: editDeliveryInManifest callback received delivery with route = " .. tostring(updatedDelivery.route) .. "\n")
-
     local manifestIndex = autopilot.gui.workingManifestIndex
     if manifestIndex then
       -- Editing existing manifest - update saved copy and save to disk
       autopilot.manifests[manifestIndex].deliveries[deliveryIndex] = updatedDelivery
       autopilot.gui.workingManifest.deliveries[deliveryIndex] = updatedDelivery
       table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
-      cecho("\n[<cyan>AutoPilot<reset>] DEBUG: Updated workingManifest.deliveries[" .. deliveryIndex .. "].route = " .. tostring(autopilot.gui.workingManifest.deliveries[deliveryIndex].route) .. "\n")
       cecho("\n[<cyan>AutoPilot<reset>] Delivery updated and saved to disk.\n")
     else
       -- Editing delivery in new manifest - only update working copy, will save when clicking Save button
       autopilot.gui.workingManifest.deliveries[deliveryIndex] = updatedDelivery
-      cecho("\n[<cyan>AutoPilot<reset>] DEBUG: Updated workingManifest.deliveries[" .. deliveryIndex .. "].route = " .. tostring(autopilot.gui.workingManifest.deliveries[deliveryIndex].route) .. "\n")
       cecho("\n[<cyan>AutoPilot<reset>] Delivery updated.\n")
     end
   end)
@@ -2232,12 +2214,9 @@ function autopilot.refreshGUI()
     autopilot.showRouteForm(autopilot.gui.currentView.index)
   elseif autopilot.gui.currentView and autopilot.gui.currentView.type == "edit_manifest" then
     -- If workingManifest exists, just refresh the display; otherwise initialize the editor
-    cecho("\n[<cyan>AutoPilot<reset>] DEBUG: workingManifest = " .. tostring(autopilot.gui.workingManifest ~= nil) .. ", manifestEditor = " .. tostring(autopilot.gui.manifestEditor ~= nil) .. "\n")
     if autopilot.gui.workingManifest and autopilot.gui.manifestEditor then
-      cecho("\n[<cyan>AutoPilot<reset>] DEBUG: refreshGUI calling refreshManifestEditor\n")
       autopilot.refreshManifestEditor()
     else
-      cecho("\n[<cyan>AutoPilot<reset>] DEBUG: refreshGUI calling showManifestEditor (will reset workingManifest!)\n")
       autopilot.showManifestEditor(autopilot.gui.currentView.index)
     end
   elseif autopilot.gui.currentView and autopilot.gui.currentView.type == "edit_manifest_name" then
@@ -2569,16 +2548,37 @@ function autopilot.displayStatusTab()
 
   autopilot.gui.content:cecho("<white>Autopilot Status:\n")
   if autopilot.runningCargo then
-    autopilot.gui.content:cecho("  <green>● ACTIVE (RUNNING CARGO)<white>\n\n")
+    autopilot.gui.content:cecho("  <green>● ACTIVE (RUNNING CARGO)<white>  ")
   elseif flightEnabled > 0 then
-    autopilot.gui.content:cecho("  <green>● ACTIVE<white>\n\n")
+    autopilot.gui.content:cecho("  <green>● ACTIVE<white>  ")
   else
-    autopilot.gui.content:cecho("  <red>○ Idle<white>\n\n")
+    autopilot.gui.content:cecho("  <red>○ Idle<white>  ")
   end
 
-  if autopilot.destination.planet then
-    autopilot.gui.content:cecho(string.format("<white>Current Destination: <green>%s<white>\n",  autopilot.destination.planet))
-  end 
+  -- Toggle button for autopilot triggers
+  if flightEnabled > 0 then
+    autopilot.gui.content:fg("red")
+    autopilot.gui.content:echoLink("[Disable]", [[
+      disableTrigger("autopilot.flight")
+      disableTrigger("autopilot.cargo")
+      cecho("[<cyan>AutoPilot<reset>] <red>Disabled<reset>\n")
+      autopilot.refreshGUI()
+    ]], "Click to disable autopilot", true)
+  else
+    autopilot.gui.content:fg("green")
+    autopilot.gui.content:echoLink("[Enable]", [[
+      enableTrigger("autopilot.flight")
+      enableTrigger("autopilot.cargo")
+      cecho("[<cyan>AutoPilot<reset>] <green>Enabled<reset>\n")
+      autopilot.refreshGUI()
+    ]], "Click to enable autopilot", true)
+  end
+  autopilot.gui.content:resetFormat()
+  autopilot.gui.content:cecho("\n\n")
+
+  if autopilot.destination and autopilot.destination.planet then
+    autopilot.gui.content:cecho(string.format("  <white>Current Destination: <green>%s<white>\n",  autopilot.destination.planet))
+  end
   autopilot.gui.content:cecho("\n")
 
   -- Settings
