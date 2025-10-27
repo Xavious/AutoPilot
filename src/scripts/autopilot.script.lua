@@ -17,10 +17,10 @@ autopilot.useContraband = autopilot.useContraband or false
 autopilot.preferredPads = autopilot.preferredPads or {}
 
 -- Configuration
-shipdb.config = shipdb.config or {
+autopilot.config = autopilot.config or {
   -- Version settings
   github_repo = "Xavious/AutoPilot",
-  update_check_done = false,
+  update_check_done = false
 }
 
 function autopilot.tableString(s)
@@ -2970,13 +2970,5 @@ function autopilot.manualUpdateCheck()
   autopilot.checkForUpdates(true)  -- Force check
 end
 
--- Register event handler for character changes (persistent, not one-shot)
-if autopilot.eventid == nil then
-  autopilot.eventid = registerAnonymousEventHandler("gmcp.Char.Info", autopilot.load)
-  autopilot.debug("Registered event handler for gmcp.Char.Info")
-end
-
 -- Check for updates on load (once per session)
 autopilot.checkForUpdates(false)
-
-echo("PROBALBY DIDN'T UDPATE")

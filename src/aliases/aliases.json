@@ -243,5 +243,12 @@
               "regex": "^ap hide$",
               "script": "",
               "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.update",
+              "isActive": "yes",
+              "regex": "^ap update$",
+              "script": "",
+              "isFolder": "no"
        }
 ]
