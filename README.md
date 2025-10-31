@@ -24,7 +24,7 @@ A comprehensive Mudlet package for Legends of the Jedi (LOTJ) that automates spa
 
 ### Opening the GUI
 
-Type `ap` or `ap gui` to open the AutoPilot control panel.
+Type `ap help` or `ap gui` to open the AutoPilot control panel.
 
 The GUI has four main tabs:
 - **Status** - View autopilot status, current ship, route, and manifest
