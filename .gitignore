@@ -7,3 +7,5 @@ build/
 
 # Ignore vscode
 .vscode
+
+CLAUDE.md

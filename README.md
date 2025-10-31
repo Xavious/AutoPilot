@@ -1,236 +1,287 @@
 # AutoPilot
 
-## Description
-A Mudlet package for Lotj that automates space travel and cargo hauling. 
+A comprehensive Mudlet package for Legends of the Jedi (LOTJ) that automates space travel and cargo hauling with an intuitive GUI interface.
 
-This has been created using Muddler's development paradigm https://github.com/demonnic/muddler
+## Features
 
-If you just want to download the package you can download the latest `AutoPilot.mpackage` release from https://github.com/Xavious/AutoPilot/releases
+- **Automated Space Travel** - Fly to single planets or multi-planet routes with full autopilot
+- **Cargo Management** - Create and manage cargo manifests with delivery tracking
+- **Ship Templates** - Save and load multiple ship configurations
+- **Route Planning** - Create reusable flight routes for efficient travel
+- **Preferred Landing Pads** - Set preferred landing pads for specific planets
+- **Profit Tracking** - Monitor cargo run expenses, revenue, and credits per hour
+- **Modern GUI** - Easy-to-use interface for all functionality
+- **Command-Line Support** - All features also accessible via console commands
 
-## ToDo
+## Installation
 
-I'll add to this as I get feedback, but I have at least these items I could tackle in the future:
+1. Download the latest `AutoPilot.mpackage` from [Releases](https://github.com/Xavious/AutoPilot/releases)
+2. In Mudlet, go to **Packages** → **Install**
+3. Select the downloaded `AutoPilot.mpackage` file
+4. The package will install and be ready to use
 
-- Streamline flow/setup to be more intuitive
-- Support for turbolifts
-- Support for landing pad preference
+## Quick Start
 
-## Instructions
+### Opening the GUI
 
-All commands start with `ap` for (AutoPilot). To get a list of commands use:
+Type `ap` or `ap gui` to open the AutoPilot control panel.
 
-```
-ap help
-```
+The GUI has four main tabs:
+- **Status** - View autopilot status, current ship, route, and manifest
+- **Ships** - Manage ship templates
+- **Routes** - Create and manage flight routes
+- **Manifests** - Create and manage cargo delivery manifests
 
-### Status and on/off Switch
+### Basic Flight
 
-#### Check Ship Values
+1. **Set up a ship:**
+   - Open GUI (`ap`)
+   - Go to **Ships** tab
+   - Click **[Add New Ship]**
+   - Enter ship name (required)
+   - If your ship requires walking to cockpit, add enter/exit paths
+   - Click **[Save]**
 
-You can check the current settings for your ship using this command
-
-```
-ap status
-```
-
-#### AutoPilot Off
-
-Serves as a trigger kill switch. Disables all AutoPilot triggers for travel and cargo.
-
-```
-ap off
-```
-
-#### AutoPilot On
-
-Enable all AutoPilot triggers. This serves to re-engage the AutoPilot and pick back up where you left off if you had to use the kill switch `ap off`. Will require you to manually trigger the next trigger in the sequence to get things moving again.
-
-```
-ap on
-```
-
-### Automated Travel
-**Note:** This will not work without initial setup detailed in the next section.
-
-Fly to a single planet, or set multiple planets as waypoints with a comma separated list. You can use spaces or omit them.
-
-```
-ap fly <planet/planets>
-```
-
-**Examples**
-
-This will attempt to fly to the planet from your current location
-
-```
-ap fly tatooine
-```
-
-Will fly to each planet in the list starting with Ithor and eventually finishing on Coruscant. 
-
-```
-ap fly ithor,kashyyyk,coruscant
-ap fly ithor, kashyyyk, coruscant
-```
-
-Setting up a leveling loop (you can add as many iterations as you want)
-
-```
-ap fly kashyyyk,corellia,kashyyyyk,corellia,kashyyyyk,corellia
-```
-
-### Setting up your ship
-
-To use the most basic feature of automating a flight path, you only need to set the ship's **name** if it's a single seater ship. If you need to walk to the cockpit of your ship, then you'll need to set the **enter** and **exit** path as well.
-
-If you want to run cargo you need to set the **capacity**, and if it's a rented/borrowed ship you'll need to set the **hatch** code.
-
-#### Ship Name
-
-```
-ap set ship <name>
-```
-
-#### Ship Enter Path
-
-Set the ship's comma separated path to cockpit after entry. You can use spaces, or omit them.
-
-```
-ap set enter <path>
-```
-
-**Examples**
-
-```
-ap set enter n,n,n,n
-ap set enter n, n, n, n
-```
-
-#### Ship Exit Path
-
-Set the ship's comma separated path to the hatch after landing. Same rules apply
-
-```
-ap set exit <path>
-```
-
-**Examples**
-
-```
-ap set exit s,s,s,s
-ap set exit s, s, s, s
-```
-
-#### Ship Hatch
-
-Set the ships's hatch code.
-
-```
-ap set hatch <code>
-```
-
-#### Ship Capacity
-
-Set the ship's cargo capacity
-
-```
-ap set capacity <amount>
-```
-
-#### Save Ship Template
-
-Saves the previously set values to a template file.
-
-```
-ap save ship
-```
-
-#### Load Ship Template
-
-Loads saved ship template. Using the command without a number will list the available templates.
-
-Shows a list of templates
-
-```
-ap load ship
-```
-
-Load a specific ship
-
-```
-ap load ship <#>
-```
+2. **Fly somewhere:**
+   - Command-line: `ap fly tatooine`
+   - Or use GUI routes with **[Fly To]** button
 
 ### Running Cargo
 
-This part could probably use some refinement for clarity, but it's really simple to understand with some examples.The basic premise is that a **stop** is a planet/resouce combination where the **planet** is paired with the **resource** you want to sell there, and a **route** is comprised of multiple stops. 
+1. **Create a manifest:**
+   - Open GUI → **Manifests** tab
+   - Click **[Add New Manifest]**
+   - Set a name for your manifest
+   - Click **[Add Delivery]**
+   - Enter planet and resource
+   - Optionally select a route to follow
+   - Add more deliveries as needed
+   - Click **[Save]**
 
-AutoPilot will loop through every **stop** in a **route** using "first in, first out" logic. 
+2. **Start cargo run:**
+   - Command-line: `ap start cargo`
+   - AutoPilot will loop through deliveries, buying and selling automatically
 
-**You should start the route with an empty cargo hold.**
+3. **View profit:**
+   - Command-line: `ap profit`
 
-#### Add Stop
+## GUI Guide
 
-This command is used to add a **stop** to the current **route**
+### Status Tab
 
+The Status tab shows:
+- **AutoPilot Status** - Enable/disable flight triggers with toggle button
+- **Contraband Status** - Enable/disable contraband hauling with toggle button
+- **Current Ship** - Currently loaded ship details
+- **Flight Progress** - Current destination and remaining waypoints
+- **Current Route** - Active route information
+- **Current Manifest** - Active manifest deliveries
+
+### Ships Tab
+
+Manage your ship templates:
+- **List View** - Shows all saved ships with **[Load]**, **[Edit]**, and **[Delete]** buttons
+- **Add/Edit Form:**
+  - **Ship Name** - The ship's name (required)
+  - **Enter Path** - Comma-separated path to cockpit (e.g., `n,n,u`)
+  - **Exit Path** - Comma-separated path from cockpit to hatch (e.g., `d,s,s`)
+  - **Hatch Code** - For rented/borrowed ships
+  - **Capacity** - Cargo hold capacity
+
+### Routes Tab
+
+Create reusable flight paths:
+- **List View** - Shows all saved routes with **[Fly To]**, **[Edit]**, and **[Delete]** buttons
+- **Add/Edit Form:**
+  - **Route Name** - Descriptive name
+  - **Planets** - Comma-separated list of waypoints (e.g., `corellia,coruscant,tatooine`)
+  - Displays as: `corellia → coruscant → tatooine`
+- **Fly To** - Immediately loads and flies the route
+
+### Manifests Tab
+
+Create cargo delivery manifests:
+- **List View** - Shows all saved manifests with **[Load]**, **[Edit]**, and **[Delete]** buttons
+- **Manifest Editor:**
+  - **Manifest Name** - Set/edit name
+  - **Deliveries** - List of planet/resource pairs
+  - **Add Delivery** - Add new delivery stop
+  - **Edit Delivery** - Modify existing delivery
+    - Planet name
+    - Resource to sell/buy
+    - Optional route to follow (or fly direct)
+
+## Command-Line Reference
+
+All commands start with `ap`:
+
+### Core Commands
+
+| Command | Description |
+|---------|-------------|
+| `ap` or `ap gui` | Open AutoPilot GUI |
+| `ap status` | Show current autopilot status |
+| `ap on` | Enable autopilot triggers |
+| `ap off` | Disable autopilot triggers |
+| `ap help` | Show command list |
+
+### Flight Commands
+
+| Command | Description |
+|---------|-------------|
+| `ap fly <planet>` | Fly to a single planet |
+| `ap fly <p1>,<p2>,<p3>` | Fly to multiple waypoints |
+
+**Examples:**
 ```
-ap add delivery <planet>:<resource>
+ap fly tatooine
+ap fly ithor,kashyyyk,coruscant
+ap fly kashyyyk,corellia,kashyyyk,corellia  (leveling loop)
 ```
 
-**Examples**
+### Ship Commands
 
-This example assumes a 2 planet route where you're starting on Corellia. When you start the cargo automation it will fill the cargo holds with electronics and plot a course to Coruscant. Upon landing on Coruscant it would sell the electronics, purchase food, then plot a course for Corellia and sell the food there. At this point a full loop would be complet and it would start again from the beginning of the route.
+| Command | Description |
+|---------|-------------|
+| `ap set ship <name>` | Set ship name |
+| `ap set enter <path>` | Set cockpit entry path (comma-separated) |
+| `ap set exit <path>` | Set hatch exit path (comma-separated) |
+| `ap set hatch <code>` | Set hatch code |
+| `ap set capacity <amount>` | Set cargo capacity |
+| `ap save ship` | Save current ship as template |
+| `ap load ship [#]` | Load ship template (no # shows list) |
 
+**Examples:**
+```
+ap set ship "My Freighter"
+ap set enter n,n,u
+ap set exit d,s,s
+ap set hatch 1234
+ap set capacity 500
+ap save ship
+```
+
+### Route Commands
+
+| Command | Description |
+|---------|-------------|
+| `ap save route` | Save current route as template |
+| `ap load route [#]` | Load route template (no # shows list) |
+
+### Manifest/Cargo Commands
+
+| Command | Description |
+|---------|-------------|
+| `ap add delivery <planet>:<resource>` | Add delivery to current manifest |
+| `ap start cargo` | Start cargo automation |
+| `ap stop cargo` | Stop cargo automation |
+| `ap profit` | Show profit report |
+
+**Examples:**
 ```
 ap add delivery coruscant:electronics
 ap add delivery corellia:food
-```
-
-#### Start Cargo
-
-Start the cargo loop once a ship and route have been configured. This will reset **expense**, **revenue**, **fuel cost**, **start time**, and **elapsed time** variables.
-
-```
 ap start cargo
 ```
 
-#### Stop Cargo
+### Landing Pad Commands
 
-Disables cargo running and turns of all AutoPilot triggers.
+| Command | Description |
+|---------|-------------|
+| `ap set pad <planet> <#>` | Set preferred landing pad for planet |
+| `ap clear pad <planet>` | Clear preferred landing pad |
 
+**Examples:**
 ```
-ap stop cargo
-```
-
-#### Save Route
-
-Saves a cargo route values to a template file.
-
-```
-ap save route
+ap set pad coruscant 3
+ap clear pad coruscant
 ```
 
+## How It Works
 
-#### Load Route
+### Flight Automation
 
-Loads a previously saved cargo route. Using the command without a number will list the available routes
+AutoPilot monitors game output with triggers that automatically:
+1. Launch your ship when you enter cockpit
+2. Engage autopilot to destination
+3. Wait for hyperspace travel
+4. Land on arrival (using preferred pad if set)
+5. Exit ship and continue to next waypoint if any
 
-Show a list of routes
+### Cargo Automation
 
-```
-ap load route
-```
+When running cargo with a manifest:
+1. AutoPilot visits each delivery in sequence
+2. Sells cargo hold contents at destination planet
+3. Buys the resource specified for that delivery
+4. Flies to next delivery (using specified route or direct)
+5. Tracks expenses, revenue, and fuel costs
+6. Loops back to first delivery when complete
 
-Load a specific route
+**Important:** Start cargo runs with an empty cargo hold.
 
-```
-ap load route <#>
-```
+### Routes vs Manifests
 
-#### Cargo Report
+- **Routes** - Simple planet waypoint lists for flying only
+- **Manifests** - Cargo delivery lists with planet/resource pairs
+  - Each delivery can optionally use a route or fly direct
+  - Manifests are for cargo automation
 
-Displays the total expenditure, revenue, and fuel costs with a start time, elapsed time, and credits/hour summary.
+## Tips and Best Practices
 
-```
-ap profit
-```
+1. **Ship Setup** - Single-seater ships only need a name; larger ships need enter/exit paths
+2. **Save Templates** - Create ship/route/manifest templates for quick reuse
+3. **Preferred Pads** - Set preferred landing pads for busy planets to avoid queues
+4. **Empty Holds** - Always start cargo runs with empty cargo holds
+5. **Kill Switch** - Use `ap off` to immediately disable all automation
+6. **Profit Tracking** - Run `ap profit` during cargo runs to monitor credits/hour
+
+## Troubleshooting
+
+**AutoPilot not responding?**
+- Check if triggers are enabled: `ap status`
+- Enable triggers: `ap on`
+- Verify ship is loaded: `ap status`
+
+**Ship won't launch/land?**
+- Check ship name matches exactly: `ap set ship <name>`
+- Verify you're at the correct location (hatch/cockpit)
+
+**Cargo not buying/selling?**
+- Ensure manifest is loaded
+- Verify cargo hold is empty when starting
+- Check resource names match game exactly
+
+**GUI not showing?**
+- Type `ap gui` to open
+- Check for Mudlet errors in console
+
+## Development
+
+This package is built using [Muddler](https://github.com/demonnic/muddler) development paradigm.
+
+**For Developers:**
+- Source code: `/src/` directory
+- Main script: `src/scripts/autopilot.script.lua`
+- Triggers: `src/triggers/`
+- See [CLAUDE.md](CLAUDE.md) for comprehensive development documentation
+
+## Future Enhancements
+
+Potential features being considered:
+- Turbolift support for ground navigation
+- Enhanced route optimization
+- More intuitive first-time setup flow
+- Cargo marketplace price tracking
+
+## Contributing
+
+Issues and pull requests welcome at [GitHub Issues](https://github.com/Xavious/AutoPilot/issues)
+
+## License
+
+See repository for license information.
+
+## Credits
+
+Created by Xavious for the LOTJ community.
