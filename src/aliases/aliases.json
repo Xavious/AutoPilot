@@ -7,37 +7,37 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.setShip",
+              "name": "autopilot.alias.ship.set",
               "isActive": "yes",
-              "regex": "^ap set ship\\s*(?\u003cship\u003e.*)$",
+              "regex": "^ap ship set\\s*(?\u003cship\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.setEnter",
+              "name": "autopilot.alias.enter.set",
               "isActive": "yes",
-              "regex": "^ap set enter\\s*(?\u003ccommands\u003e.*)$",
+              "regex": "^ap enter set\\s*(?\u003ccommands\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.setExit",
+              "name": "autopilot.alias.exit.set",
               "isActive": "yes",
-              "regex": "^ap set exit\\s*(?\u003ccommands\u003e.*)$",
+              "regex": "^ap exit set\\s*(?\u003ccommands\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.setHatch",
+              "name": "autopilot.alias.hatch.set",
               "isActive": "yes",
-              "regex": "^ap set hatch\\s*(?\u003ccode\u003e.*)$",
+              "regex": "^ap hatch set\\s*(?\u003ccode\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.setCapacity",
+              "name": "autopilot.alias.capacity.set",
               "isActive": "yes",
-              "regex": "^ap set capacity\\s*(?\u003ccapacity\u003e.*)$",
+              "regex": "^ap capacity set\\s*(?\u003ccapacity\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
@@ -49,16 +49,16 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.saveShip",
+              "name": "autopilot.alias.ship.save",
               "isActive": "yes",
-              "regex": "^ap save ship$",
+              "regex": "^ap ship save$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.saveRoute",
+              "name": "autopilot.alias.route.save",
               "isActive": "yes",
-              "regex": "^ap save route\\s*(?<name>.*)$",
+              "regex": "^ap route save\\s*(?<name>.*)$",
               "script": "",
               "isFolder": "no"
        },
@@ -70,16 +70,16 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.loadShip",
+              "name": "autopilot.alias.ship.load",
               "isActive": "yes",
-              "regex": "^ap load ship\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap ship load\\s*(?\u003cindex\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.loadRoute",
+              "name": "autopilot.alias.route.load",
               "isActive": "yes",
-              "regex": "^ap load route\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap route load\\s*(?\u003cindex\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
@@ -98,37 +98,37 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.addStop",
+              "name": "autopilot.alias.stop.add",
               "isActive": "yes",
-              "regex": "^ap add stop\\s*(?:(?\u003cplanet\u003e[\\w ]+))?(?::(?\u003cresource\u003e[\\w ]+))?$",
+              "regex": "^ap stop add\\s*(?:(?\u003cplanet\u003e[\\w ]+))?(?::(?\u003cresource\\u003e[\\w ]+))?$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.startCargo",
+              "name": "autopilot.alias.cargo.start",
               "isActive": "yes",
-              "regex": "^ap start cargo$",
+              "regex": "^ap cargo start$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.stopCargo",
+              "name": "autopilot.alias.cargo.stop",
               "isActive": "yes",
-              "regex": "^ap stop cargo$",
+              "regex": "^ap cargo stop$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.deleteShip",
+              "name": "autopilot.alias.ship.delete",
               "isActive": "yes",
-              "regex": "^ap delete ship\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap ship delete\\s*(?\u003cindex\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.deleteRoute",
+              "name": "autopilot.alias.route.delete",
               "isActive": "yes",
-              "regex": "^ap delete route\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap route delete\\s*(?\u003cindex\u003e.*)$",
               "script": "",
               "isFolder": "no"
        },
@@ -154,79 +154,121 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.addRoute",
+              "name": "autopilot.alias.route.add",
               "isActive": "yes",
-              "regex": "^ap add route\\s*(?<planets>.*)$",
+              "regex": "^ap route add\\s*(?<planets>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.addDelivery",
+              "name": "autopilot.alias.delivery.add",
               "isActive": "yes",
-              "regex": "^ap add delivery\\s+(?<planet>[^:]+):(?<resource>.+?)(?:\\s+(?<routeIndex>\\d+))?$",
+              "regex": "^ap delivery add\\s+(?<planet>[^:]+):(?<resource>.+?)(?:\\s+(?<routeIndex>\\d+))?$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.saveManifest",
+              "name": "autopilot.alias.manifest.save",
               "isActive": "yes",
-              "regex": "^ap save manifest\\s*(?<name>.*)$",
+              "regex": "^ap manifest save\\s*(?<name>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.loadManifest",
+              "name": "autopilot.alias.manifest.load",
               "isActive": "yes",
-              "regex": "^ap load manifest\\s*(?<index>.*)$",
+              "regex": "^ap manifest load\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.deleteManifest",
+              "name": "autopilot.alias.manifest.delete",
               "isActive": "yes",
-              "regex": "^ap delete manifest\\s*(?<index>.*)$",
+              "regex": "^ap manifest delete\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.viewManifest",
+              "name": "autopilot.alias.manifest.view",
               "isActive": "yes",
-              "regex": "^ap view manifest$",
+              "regex": "^ap manifest view$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.clearManifest",
+              "name": "autopilot.alias.manifest.clear",
               "isActive": "yes",
-              "regex": "^ap clear manifest$",
+              "regex": "^ap manifest clear$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.clearRoute",
+              "name": "autopilot.alias.route.clear",
               "isActive": "yes",
-              "regex": "^ap clear route$",
+              "regex": "^ap route clear$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.setPad",
+              "name": "autopilot.alias.pad.set",
               "isActive": "yes",
-              "regex": "^ap set pad(?:\\s+(?<planet>.+?)(?:\\s+\"(?<pad>.+)\")?)?$",
+              "regex": "^ap pad set(?:\\s+(?<planet>.+?)(?:\\s+\"(?<pad>.+)\")?)?$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.clearPad",
+              "name": "autopilot.alias.pad.clear",
               "isActive": "yes",
-              "regex": "^ap clear pad\\s+(?<planet>.+)$",
+              "regex": "^ap pad clear\\s+(?<planet>.+)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.listPads",
+              "name": "autopilot.alias.pad.list",
               "isActive": "yes",
-              "regex": "^ap list pads$",
+              "regex": "^ap pad list$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.help.general",
+              "isActive": "yes",
+              "regex": "^ap general help$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.help.pad",
+              "isActive": "yes",
+              "regex": "^ap pad help$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.help.ship",
+              "isActive": "yes",
+              "regex": "^ap ship help$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.help.shipManage",
+              "isActive": "yes",
+              "regex": "^ap ship manage help$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.help.route",
+              "isActive": "yes",
+              "regex": "^ap route help$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.help.manifest",
+              "isActive": "yes",
+              "regex": "^ap manifest help$",
               "script": "",
               "isFolder": "no"
        },
