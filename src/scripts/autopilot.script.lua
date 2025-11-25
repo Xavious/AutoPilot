@@ -2213,7 +2213,7 @@ function autopilot.showGUI()
     return
   end
   autopilot.gui.window:show()
-  autopilot.gui.window:raise()
+  autopilot.gui.window:raiseAll()
   autopilot.updateTabStyles()
   autopilot.refreshGUI()
 end

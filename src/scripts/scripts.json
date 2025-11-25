@@ -4,5 +4,11 @@
               "isActive": "yes",
               "script": "",
               "isFolder": "no"
+       },
+       {
+              "name": "launcher",
+              "isActive": "yes",
+              "script": "",
+              "isFolder": "no"
        }
 ]
