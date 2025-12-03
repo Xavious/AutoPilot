@@ -119,6 +119,20 @@
               "isFolder": "no"
        },
        {
+              "name": "autopilot.alias.cargo.pause",
+              "isActive": "yes",
+              "regex": "^ap cargo pause$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
+              "name": "autopilot.alias.cargo.resume",
+              "isActive": "yes",
+              "regex": "^ap cargo resume$",
+              "script": "",
+              "isFolder": "no"
+       },
+       {
               "name": "autopilot.alias.ship.delete",
               "isActive": "yes",
               "regex": "^ap ship delete\\s*(?\u003cindex\u003e.*)$",
