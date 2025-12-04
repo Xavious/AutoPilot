@@ -149,7 +149,7 @@
        {
               "name": "autopilot.alias.help",
               "isActive": "yes",
-              "regex": "^ap help$",
+              "regex": "^ap help\\s*(?<section>.*)$",
               "script": "",
               "isFolder": "no"
        },

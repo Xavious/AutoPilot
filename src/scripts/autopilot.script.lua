@@ -117,6 +117,7 @@ function autopilot.alias.helpGeneral()
   cecho("   Disables autopilot triggers.\n\n")
   cecho("<yellow>ap clear<reset>\n")
   cecho("   Clears all autopilot attributes (ship, route, waypoints, destination).\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help general<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpPad()
@@ -129,6 +130,7 @@ function autopilot.alias.helpPad()
   cecho("   Clears the preferred landing pad for a planet.\n\n")
   cecho("<yellow>ap pad list<reset>\n")
   cecho("   Lists all configured preferred landing pads.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help pad<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpShip()
@@ -145,6 +147,7 @@ function autopilot.alias.helpShip()
   cecho("   Sets the hatch code for your ship.\n\n")
   cecho("<yellow>ap capacity set <amount><reset>\n")
   cecho("   Sets your ship's cargo capacity for cargo hauling.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help ship<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpShipManage()
@@ -157,6 +160,7 @@ function autopilot.alias.helpShipManage()
   cecho("   Loads a ship from your saved list by its ID.\n\n")
   cecho("<yellow>ap ship delete <#><reset>\n")
   cecho("   Deletes a ship from your ship list by its ID.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help shipmanage<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpRoute()
@@ -173,6 +177,7 @@ function autopilot.alias.helpRoute()
   cecho("   Deletes a route from your route list by its ID.\n\n")
   cecho("<yellow>ap fly route<reset>\n")
   cecho("   Fly using the currently loaded route.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help route<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpManifest()
@@ -206,24 +211,11 @@ function autopilot.alias.helpManifest()
   cecho("<yellow>ap contraband <on/off><reset>\n")
   cecho("   Toggle contraband mode (uses buycontraband/sellcontraband commands).\n")
   cecho("   <red>⚠ WARNING: Requires level 120 Smuggling skill. May have in-game consequences.<reset>\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help manifest<reset> <gray>to see just this section.\n\n")
 end
 
-function autopilot.alias.help()
-  debugc("autopilot.alias.help()")
-  cecho("<white>------------------------------------------------------------\n")
-  cecho("<cyan>                       AutoPilot Help<reset>\n")
-  cecho("<white>------------------------------------------------------------\n\n")
-  
-  autopilot.alias.helpGeneral()
-  autopilot.alias.helpPad()
-  autopilot.alias.helpShip()
-  autopilot.alias.helpShipManage()
-  autopilot.alias.helpRoute()
-  autopilot.alias.helpManifest()
-  
-  cecho("<white>------------------------------------------------------------<reset>\n")
-
- -- GUI Commands
+function autopilot.alias.helpGUI()
+  debugc("autopilot.alias.helpGUI()")
   cecho("<cyan>GUI COMMANDS<reset>\n")
   cecho("<white>------------------------------------------------------------\n")
   cecho("<yellow>ap gui<reset>\n")
@@ -232,13 +224,62 @@ function autopilot.alias.help()
   cecho("   Show the visual interface\n\n")
   cecho("<yellow>ap hide<reset>\n")
   cecho("   Hide the visual interface\n\n")
-
-   -- Update
+  cecho("<white>------------------------------------------------------------\n")
   cecho("<cyan>UPDATE COMMANDS<reset>\n")
   cecho("<white>------------------------------------------------------------\n")
   cecho("<yellow>ap update<reset>\n")
   cecho("   Check for updates\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help gui<reset> <gray>to see just this section.\n\n")
+end
 
+function autopilot.alias.help()
+  debugc("autopilot.alias.help()")
+  
+  local section = (matches.section and matches.section:lower() or ""):match("^%s*(.-)%s*$")
+  
+  -- If no section specified, show all help sections
+  if section == "" then
+    cecho("<white>------------------------------------------------------------\n")
+    cecho("<cyan>                       AutoPilot Help<reset>\n")
+    cecho("<white>------------------------------------------------------------\n\n")
+    cecho("<cyan>To view help for a specific section, use:<reset>\n")
+    cecho("<yellow>ap help <section><reset>\n\n")
+    cecho("<cyan>Available sections:<reset>\n")
+    cecho("  <yellow>general<reset>      - General flight commands\n")
+    cecho("  <yellow>pad<reset>          - Landing pad preferences\n")
+    cecho("  <yellow>ship<reset>         - Ship attribute commands\n")
+    cecho("  <yellow>shipmanage<reset>   - Ship management commands\n")
+    cecho("  <yellow>route<reset>        - Route commands\n")
+    cecho("  <yellow>manifest<reset>     - Cargo/manifest commands\n")
+    cecho("  <yellow>gui<reset>          - GUI commands\n\n")
+    cecho("<white>------------------------------------------------------------<reset>\n")
+    cecho("<cyan>EXAMPLES:<reset>\n")
+    cecho("<yellow>ap help general<reset> - Show general flight commands\n")
+    cecho("<yellow>ap help manifest<reset> - Show cargo management commands\n")
+    cecho("<yellow>ap help<reset> - Show this help (you can also run just \"ap help\" with no section)\n\n")
+    return
+  end
+  
+  -- Handle specific sections
+  if section == "general" then
+    autopilot.alias.helpGeneral()
+  elseif section == "pad" then
+    autopilot.alias.helpPad()
+  elseif section == "ship" then
+    autopilot.alias.helpShip()
+  elseif section == "shipmanage" then
+    autopilot.alias.helpShipManage()
+  elseif section == "route" then
+    autopilot.alias.helpRoute()
+  elseif section == "manifest" then
+    autopilot.alias.helpManifest()
+  elseif section == "gui" then
+    autopilot.alias.helpGUI()
+  else
+    cecho("<red>Unknown help section: <yellow>"..section.."<reset>\n")
+    cecho("<cyan>Available sections:<reset> general, pad, ship, shipmanage, route, manifest, gui\n")
+    cecho("<yellow>ap help<reset> for more info\n")
+  end
 end
 
 function autopilot.alias.status()
