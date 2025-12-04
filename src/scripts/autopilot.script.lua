@@ -308,6 +308,10 @@ function autopilot.alias.status()
   else
     cecho("<yellow>inactive<reset>\n")
   end
+
+  if autopilot.cargoPaused then
+    cecho("<red>Cargo Paused:<reset> <yellow>YES (paused mid-run)<reset>\n")
+  end
   cecho("----------------------------------------------\n")
 
   if next(autopilot.ship) == nil and autopilot.waypoints == nil then
