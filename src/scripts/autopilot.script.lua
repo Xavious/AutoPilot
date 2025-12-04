@@ -15,6 +15,8 @@ autopilot.currentManifest = autopilot.currentManifest or nil
 autopilot.runningCargo = autopilot.runningCargo or false
 autopilot.useContraband = autopilot.useContraband or false
 autopilot.preferredPads = autopilot.preferredPads or {}
+autopilot.cargoPaused = autopilot.cargoPaused or false
+autopilot.pausedState = autopilot.pausedState or {}
 
 -- Configuration
 autopilot.config = autopilot.config or {
@@ -115,6 +117,7 @@ function autopilot.alias.helpGeneral()
   cecho("   Disables autopilot triggers.\n\n")
   cecho("<yellow>ap clear<reset>\n")
   cecho("   Clears all autopilot attributes (ship, route, waypoints, destination).\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help general<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpPad()
@@ -127,6 +130,7 @@ function autopilot.alias.helpPad()
   cecho("   Clears the preferred landing pad for a planet.\n\n")
   cecho("<yellow>ap pad list<reset>\n")
   cecho("   Lists all configured preferred landing pads.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help pad<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpShip()
@@ -143,6 +147,7 @@ function autopilot.alias.helpShip()
   cecho("   Sets the hatch code for your ship.\n\n")
   cecho("<yellow>ap capacity set <amount><reset>\n")
   cecho("   Sets your ship's cargo capacity for cargo hauling.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help ship<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpShipManage()
@@ -155,6 +160,7 @@ function autopilot.alias.helpShipManage()
   cecho("   Loads a ship from your saved list by its ID.\n\n")
   cecho("<yellow>ap ship delete <#><reset>\n")
   cecho("   Deletes a ship from your ship list by its ID.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help shipmanage<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpRoute()
@@ -171,6 +177,7 @@ function autopilot.alias.helpRoute()
   cecho("   Deletes a route from your route list by its ID.\n\n")
   cecho("<yellow>ap fly route<reset>\n")
   cecho("   Fly using the currently loaded route.\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help route<reset> <gray>to see just this section.\n\n")
 end
 
 function autopilot.alias.helpManifest()
@@ -195,29 +202,26 @@ function autopilot.alias.helpManifest()
   cecho("   Begins a cargo run (requires ship capacity and loaded manifest).\n\n")
   cecho("<yellow>ap cargo stop<reset>\n")
   cecho("   Stops your cargo run.\n\n")
+  cecho("<yellow>ap cargo pause<reset>\n")
+  cecho("   Pauses cargo buying/selling. Flight continues normally if mid-flight.\n")
+  cecho("   Ship will still arrive at destination, land, and refuel automatically.\n")
+  cecho("   Cargo remains in hold for manual handling or use resume.\n\n")
+  cecho("<yellow>ap cargo resume<reset>\n")
+  cecho("   Resumes paused cargo run. Assumes ship is empty at cargo planet.\n")
+  cecho("   Buys next cargo and continues to next destination.\n\n")
+  cecho("<yellow>ap cargo resume sell<reset>\n")
+  cecho("   Resumes paused cargo run by selling current cargo first.\n")
+  cecho("   Use this if cargo is still in hold. Buys next cargo and continues.\n\n")
   cecho("<yellow>ap profit<reset>\n")
   cecho("   Show cargo hauling financial report.\n\n")
   cecho("<yellow>ap contraband <on/off><reset>\n")
   cecho("   Toggle contraband mode (uses buycontraband/sellcontraband commands).\n")
   cecho("   <red>⚠ WARNING: Requires level 120 Smuggling skill. May have in-game consequences.<reset>\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help manifest<reset> <gray>to see just this section.\n\n")
 end
 
-function autopilot.alias.help()
-  debugc("autopilot.alias.help()")
-  cecho("<white>------------------------------------------------------------\n")
-  cecho("<cyan>                       AutoPilot Help<reset>\n")
-  cecho("<white>------------------------------------------------------------\n\n")
-  
-  autopilot.alias.helpGeneral()
-  autopilot.alias.helpPad()
-  autopilot.alias.helpShip()
-  autopilot.alias.helpShipManage()
-  autopilot.alias.helpRoute()
-  autopilot.alias.helpManifest()
-  
-  cecho("<white>------------------------------------------------------------<reset>\n")
-
- -- GUI Commands
+function autopilot.alias.helpGUI()
+  debugc("autopilot.alias.helpGUI()")
   cecho("<cyan>GUI COMMANDS<reset>\n")
   cecho("<white>------------------------------------------------------------\n")
   cecho("<yellow>ap gui<reset>\n")
@@ -226,13 +230,62 @@ function autopilot.alias.help()
   cecho("   Show the visual interface\n\n")
   cecho("<yellow>ap hide<reset>\n")
   cecho("   Hide the visual interface\n\n")
-
-   -- Update
+  cecho("<white>------------------------------------------------------------\n")
   cecho("<cyan>UPDATE COMMANDS<reset>\n")
   cecho("<white>------------------------------------------------------------\n")
   cecho("<yellow>ap update<reset>\n")
   cecho("   Check for updates\n\n")
+  cecho("<gray>Use<reset> <cyan>ap help gui<reset> <gray>to see just this section.\n\n")
+end
 
+function autopilot.alias.help()
+  debugc("autopilot.alias.help()")
+  
+  local section = (matches.section and matches.section:lower() or ""):match("^%s*(.-)%s*$")
+  
+  -- If no section specified, show all help sections
+  if section == "" then
+    cecho("<white>------------------------------------------------------------\n")
+    cecho("<cyan>                       AutoPilot Help<reset>\n")
+    cecho("<white>------------------------------------------------------------\n\n")
+    cecho("<cyan>To view help for a specific section, use:<reset>\n")
+    cecho("<yellow>ap help <section><reset>\n\n")
+    cecho("<cyan>Available sections:<reset>\n")
+    cecho("  <yellow>general<reset>      - General flight commands\n")
+    cecho("  <yellow>pad<reset>          - Landing pad preferences\n")
+    cecho("  <yellow>ship<reset>         - Ship attribute commands\n")
+    cecho("  <yellow>shipmanage<reset>   - Ship management commands\n")
+    cecho("  <yellow>route<reset>        - Route commands\n")
+    cecho("  <yellow>manifest<reset>     - Cargo/manifest commands\n")
+    cecho("  <yellow>gui<reset>          - GUI commands\n\n")
+    cecho("<white>------------------------------------------------------------<reset>\n")
+    cecho("<cyan>EXAMPLES:<reset>\n")
+    cecho("<yellow>ap help general<reset> - Show general flight commands\n")
+    cecho("<yellow>ap help manifest<reset> - Show cargo management commands\n")
+    cecho("<yellow>ap help<reset> - Show this help (you can also run just \"ap help\" with no section)\n\n")
+    return
+  end
+  
+  -- Handle specific sections
+  if section == "general" then
+    autopilot.alias.helpGeneral()
+  elseif section == "pad" then
+    autopilot.alias.helpPad()
+  elseif section == "ship" then
+    autopilot.alias.helpShip()
+  elseif section == "shipmanage" then
+    autopilot.alias.helpShipManage()
+  elseif section == "route" then
+    autopilot.alias.helpRoute()
+  elseif section == "manifest" then
+    autopilot.alias.helpManifest()
+  elseif section == "gui" then
+    autopilot.alias.helpGUI()
+  else
+    cecho("<red>Unknown help section: <yellow>"..section.."<reset>\n")
+    cecho("<cyan>Available sections:<reset> general, pad, ship, shipmanage, route, manifest, gui\n")
+    cecho("<yellow>ap help<reset> for more info\n")
+  end
 end
 
 function autopilot.alias.status()
@@ -254,6 +307,10 @@ function autopilot.alias.status()
     cecho("<green>ACTIVE ✓<reset>\n")
   else
     cecho("<yellow>inactive<reset>\n")
+  end
+
+  if autopilot.cargoPaused then
+    cecho("<red>Cargo Paused:<reset> <yellow>YES (paused mid-run)<reset>\n")
   end
   cecho("----------------------------------------------\n")
 
@@ -284,7 +341,16 @@ function autopilot.alias.status()
   end
   
   if autopilot.destination then
-    cecho("<green>destination:<reset> <cyan>".. autopilot.destination.planet.."<reset>\n")
+    cecho("<green>destination:<reset> <cyan>".. autopilot.destination.planet.."<reset>")
+    
+    -- Show current leg information if running cargo
+    if autopilot.runningCargo and autopilot.currentManifest and autopilot.deliveryIndex then
+      local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
+      if delivery then
+        cecho("  <gray>(Leg: Buy <magenta>"..delivery.resource.."<reset> for <cyan>"..delivery.planet.."<reset><gray>)<reset>")
+      end
+    end
+    cecho("\n")
   end
 
   if autopilot.waypoints and next(autopilot.waypoints) then
@@ -311,11 +377,19 @@ function autopilot.alias.status()
     cecho("Current Manifest\n")
     cecho("----------------------------------------------\n")
     local manifestName = autopilot.currentManifest.name or "Unnamed"
-    cecho("<green>Name:<reset> <yellow>"..manifestName.."<reset>\n")
-    cecho("<green>Deliveries:<reset>\n")
+    cecho("<green>Name:<reset> <yellow>"..manifestName.."<reset>")
+    if autopilot.runningCargo then
+      cecho("  <green>[ACTIVE]<reset>")
+    end
+    cecho("\n<green>Deliveries:<reset>\n")
     for i, delivery in ipairs(autopilot.currentManifest.deliveries) do
       local routeText = delivery.route and " <gray>(route #<white>"..delivery.route.."<gray>)<reset>" or " <gray>(direct)<reset>"
-      cecho("<white>"..i.."<reset>. <cyan>"..delivery.planet.."<reset>:<magenta>"..delivery.resource.."<reset>"..routeText.."\n")
+      local contrabandText = delivery.contraband and " <red>C<reset>" or ""
+      local current = ""
+      if autopilot.runningCargo and i == autopilot.deliveryIndex then
+        current = " <green>◆ CURRENT<reset>"
+      end
+      cecho("<white>"..i.."<reset>. <cyan>"..delivery.planet.."<reset>:<magenta>"..delivery.resource.."<reset>"..contrabandText..routeText..current.."\n")
     end
     cecho("----------------------------------------------\n")
   end
@@ -763,7 +837,7 @@ end
 function autopilot.alias.viewManifest()
   debugc("autopilot.alias.viewManifest()")
   if not autopilot.currentManifest or not autopilot.currentManifest.deliveries or #autopilot.currentManifest.deliveries == 0 then
-    cecho("[<cyan>AutoPilot<reset>] <red>No current manifest. Use 'ap add delivery' to create one.<reset>\n")
+    cecho("[<cyan>AutoPilot<reset>] <red>No current manifest. Use 'ap delivery add' to create one.<reset>\n")
     return
   end
 
@@ -786,7 +860,8 @@ function autopilot.alias.viewManifest()
     else
       routeText = "\n   <gray>Route:<reset> Direct flight"
     end
-    cecho(i..". <cyan>"..delivery.planet.."<reset> ← <magenta>"..delivery.resource.."<reset>"..routeText.."\n")
+    local contrabandText = delivery.contraband and "\n   <red>Contraband:<reset> <red>ENABLED ⚠<reset>" or ""
+    cecho(i..". <cyan>"..delivery.planet.."<reset> ← <magenta>"..delivery.resource.."<reset>"..routeText..contrabandText.."\n")
   end
   cecho("----------------------------------------------\n")
 end
@@ -795,25 +870,30 @@ function autopilot.alias.addDelivery()
   debugc("autopilot.alias.addDelivery()")
   if matches.planet == "" or matches.resource == "" then
     cecho("-----------------[ <cyan>AutoPilot<reset> ]----------------\n")
-    cecho("<red>ap add delivery <planet>:<resource> [route#]<reset>\n")
+    cecho("<red>ap delivery add <planet>:<resource> [route#] [contraband]<reset>\n")
     cecho("----------------Usage Examples----------------\n")
-    cecho("<yellow>ap add delivery coruscant:food\n")
-    cecho("<yellow>ap add delivery tatooine:spice 1\n")
+    cecho("<yellow>ap delivery add coruscant:food\n")
+    cecho("<yellow>ap delivery add tatooine:spice 1\n")
+    cecho("<yellow>ap delivery add kessel:glitterstim 2 contraband\n")
     return
   end
 
   local routeIndex = matches.routeIndex and tonumber(matches.routeIndex) or nil
+  local useContraband = matches.contraband and matches.contraband:lower() == "contraband" or false
+  
   local delivery = {
     planet = matches.planet:lower(),
     resource = matches.resource:lower(),
-    route = routeIndex
+    route = routeIndex,
+    contraband = useContraband
   }
 
   autopilot.currentManifest = autopilot.currentManifest or {deliveries = {}}
   table.insert(autopilot.currentManifest.deliveries, delivery)
 
   local routeText = routeIndex and " (via route #"..routeIndex..")" or " (direct)"
-  cecho("[<cyan>AutoPilot<reset>] Delivery added: <cyan>"..delivery.planet.."<reset> ← <magenta>"..delivery.resource.."<reset>"..routeText.."\n\n")
+  local contrabandText = useContraband and " <red>[CONTRABAND]<reset>" or ""
+  cecho("[<cyan>AutoPilot<reset>] Delivery added: <cyan>"..delivery.planet.."<reset> ← <magenta>"..delivery.resource.."<reset>"..routeText..contrabandText.."\n\n")
 
   -- Show current manifest state
   autopilot.alias.viewManifest()
@@ -827,7 +907,7 @@ function autopilot.alias.startCargo()
   end
 
   if not autopilot.currentManifest or not autopilot.currentManifest.deliveries then
-    cecho("[<cyan>AutoPilot<reset>] <red>No manifest loaded. Use 'ap load manifest #' or create one with 'ap add delivery'.\n")
+    cecho("[<cyan>AutoPilot<reset>] <red>No manifest loaded. Use 'ap manifest load #' or create one with 'ap delivery add'.\n")
     return
   end
 
@@ -846,7 +926,9 @@ function autopilot.alias.startCargo()
 
   -- Buy cargo for first delivery
   local firstDelivery = autopilot.currentManifest.deliveries[1]
-  local buyCommand = autopilot.useContraband and "buycontraband" or "buycargo"
+  -- Use per-delivery contraband flag if set, otherwise fall back to global setting
+  local useContraband = firstDelivery.contraband or autopilot.useContraband
+  local buyCommand = useContraband and "buycontraband" or "buycargo"
   send(buyCommand.." "..autopilot.ship.name.." '"..firstDelivery.resource.. "' "..autopilot.ship.capacity)
   cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run started<reset> | Buying <magenta>"..firstDelivery.resource.."<reset> for delivery to <cyan>"..firstDelivery.planet.."<reset>\n")
 end
@@ -855,6 +937,90 @@ function autopilot.alias.stopCargo()
   debugc("autopilot.alias.stopCargo()")
   autopilot.runningCargo = false
   autopilot.alias.off()
+end
+
+function autopilot.alias.pauseCargo()
+  debugc("autopilot.alias.pauseCargo()")
+  if not autopilot.runningCargo then
+    cecho("[<cyan>AutoPilot<reset>] <red>No cargo run in progress to pause.<reset>\n")
+    return
+  end
+
+  -- Set pause flag - triggers will check this and halt progression
+  autopilot.cargoPaused = true
+  
+  cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run paused.<reset>\n")
+  cecho("[<cyan>AutoPilot<reset>] <gray>Current delivery:<reset> <cyan>"..autopilot.currentManifest.deliveries[autopilot.deliveryIndex].planet.."<reset> ← <magenta>"..autopilot.currentManifest.deliveries[autopilot.deliveryIndex].resource.."<reset>\n")
+  cecho("[<cyan>AutoPilot<reset>] <gray>Automation will halt at next trigger checkpoint. Ship will remain landed/paused.<reset>\n\n")
+  cecho("[<cyan>AutoPilot<reset>] <cyan>Resume options:<reset>\n")
+  cecho("[<cyan>AutoPilot<reset>]   <green>ap cargo resume<reset> - Continue with next cargo leg (assumes ship empty)\n")
+  cecho("[<cyan>AutoPilot<reset>]   <green>ap cargo resume sell<reset> - Sell current cargo first, then continue\n\n")
+  
+  -- Save current state for resume
+  autopilot.pausedState = {
+    runningCargo = autopilot.runningCargo,
+    deliveryIndex = autopilot.deliveryIndex,
+    currentManifest = autopilot.currentManifest,
+    expense = autopilot.expense,
+    revenue = autopilot.revenue,
+    fuelCost = autopilot.fuelCost,
+    startTime = autopilot.startTime,
+    useContraband = autopilot.useContraband
+  }
+  
+  table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
+end
+
+function autopilot.alias.resumeCargo()
+  debugc("autopilot.alias.resumeCargo()")
+  if not autopilot.cargoPaused or not autopilot.pausedState.runningCargo then
+    cecho("[<cyan>AutoPilot<reset>] <red>No paused cargo run to resume.<reset>\n")
+    return
+  end
+
+  -- Restore saved state
+  autopilot.runningCargo = autopilot.pausedState.runningCargo
+  autopilot.deliveryIndex = autopilot.pausedState.deliveryIndex
+  autopilot.currentManifest = autopilot.pausedState.currentManifest
+  autopilot.expense = autopilot.pausedState.expense
+  autopilot.revenue = autopilot.pausedState.revenue
+  autopilot.fuelCost = autopilot.pausedState.fuelCost
+  autopilot.startTime = autopilot.pausedState.startTime
+  autopilot.useContraband = autopilot.pausedState.useContraband
+
+  -- Clear pause flag
+  autopilot.cargoPaused = false
+  
+  -- Check if user wants to sell current cargo first
+  local shouldSell = matches.sell and matches.sell:lower():match("sell") ~= nil
+  
+  if shouldSell then
+    -- User wants to sell the last cargo
+    local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
+    local useContraband = delivery.contraband or autopilot.useContraband
+    local sellCommand = useContraband and "sellcontraband" or "sellcargo"
+    
+    cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed (selling first).<reset>\n")
+    cecho("[<cyan>AutoPilot<reset>] Selling <magenta>"..delivery.resource.."<reset> for <cyan>"..delivery.planet.."<reset>\n")
+    
+    send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+  else
+    -- Assume ship is empty and at the correct cargo pad - buy next cargo
+    local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
+    local useContraband = delivery.contraband or autopilot.useContraband
+    local buyCommand = useContraband and "buycontraband" or "buycargo"
+    
+    cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed.<reset>\n")
+    cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..delivery.resource.."<reset> for delivery to <cyan>"..delivery.planet.."<reset>\n")
+    
+    send(buyCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+  end
+  
+  -- Re-enable autopilot
+  autopilot.alias.on()
+  
+  -- Save state to file
+  table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
 end
 
 function autopilot.alias.contraband()
@@ -884,6 +1050,13 @@ end
 
 function autopilot.trigger.openHatch()
   debugc("autopilot.trigger.openHatch()")
+  
+  -- If cargo run is paused, don't launch
+  if autopilot.cargoPaused then
+    cecho("\n[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Launch halted. Use <green>ap cargo resume<reset> to continue.\n")
+    return
+  end
+  
   send("refuel "..autopilot.ship.name)
   send("enter "..autopilot.ship.name)
   send("close")
@@ -900,6 +1073,13 @@ end
 
 function autopilot.trigger.launch()
   debugc("autopilot.trigger.launch()")
+  
+  -- If cargo run is paused, don't continue
+  if autopilot.cargoPaused then
+    cecho("\n[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Flight halted. Use <green>ap cargo resume<reset> to continue.\n")
+    return
+  end
+  
   enableTrigger("autopilot.trigger.showplanet")
   send("showplanet "..autopilot.destination.planet)
 end
@@ -988,9 +1168,19 @@ function autopilot.trigger.land()
       return
     end
 
-    -- No more waypoints - we're at the delivery planet, sell cargo
+    -- No more waypoints - we're at the delivery planet
     cecho("[<cyan>AutoPilot<reset>] <green>Delivery destination reached:<reset> <cyan>"..delivery.planet.."<reset>\n")
-    local sellCommand = autopilot.useContraband and "sellcontraband" or "sellcargo"
+    
+    -- If cargo run is paused, don't sell cargo - leave it for manual handling
+    if autopilot.cargoPaused then
+      cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Ship refueled. Cargo remains in hold.\n")
+      cecho("[<cyan>AutoPilot<reset>] <gray>Sell cargo manually or use<reset> <green>ap cargo resume<reset> <gray>when ready.<reset>\n")
+      return
+    end
+    
+    -- Not paused - proceed with selling cargo
+    local useContraband = delivery.contraband or autopilot.useContraband
+    local sellCommand = useContraband and "sellcontraband" or "sellcargo"
     send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
     return
   end
@@ -1052,6 +1242,12 @@ function autopilot.trigger.cargoSold()
   autopilot.revenue = autopilot.revenue + matches.cost
   autopilot.profit = autopilot.revenue - autopilot.expense - autopilot.fuelCost
 
+  -- Check if cargo run is paused - if so, don't buy next cargo
+  if autopilot.cargoPaused then
+    cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Use <green>ap cargo resume<reset> to continue.\n")
+    return
+  end
+
   -- Move to next delivery
   if #autopilot.currentManifest.deliveries == autopilot.deliveryIndex then
     autopilot.deliveryIndex = 1
@@ -1061,7 +1257,9 @@ function autopilot.trigger.cargoSold()
 
   -- Buy cargo for next delivery
   local nextDelivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
-  local buyCommand = autopilot.useContraband and "buycontraband" or "buycargo"
+  -- Use per-delivery contraband flag if set, otherwise fall back to global setting
+  local useContraband = nextDelivery.contraband or autopilot.useContraband
+  local buyCommand = useContraband and "buycontraband" or "buycargo"
   send(buyCommand.." "..autopilot.ship.name.." '"..nextDelivery.resource.. "' "..autopilot.ship.capacity)
   cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..nextDelivery.resource.."<reset> for delivery to <cyan>"..nextDelivery.planet.."<reset>\n")
 end

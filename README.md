@@ -123,7 +123,29 @@ All commands start with `ap`:
 | `ap status` | Show current autopilot status |
 | `ap on` | Enable autopilot triggers |
 | `ap off` | Disable autopilot triggers |
-| `ap help` | Show command list |
+| `ap help` | Show help index with available sections |
+| `ap help <section>` | Show help for a specific section |
+
+### Help Sections
+
+Use `ap help <section>` to view help for a specific topic:
+
+| Section | Description |
+|---------|-------------|
+| `ap help general` | General flight commands (status, fly, on, off, clear) |
+| `ap help pad` | Landing pad preferences (set, clear, list) |
+| `ap help ship` | Ship attribute commands (set ship, enter, exit, hatch, capacity) |
+| `ap help shipmanage` | Ship management (save, load, delete ship templates) |
+| `ap help route` | Route commands (add, save, load, delete, fly) |
+| `ap help manifest` | Cargo/manifest commands (add delivery, start/stop/pause cargo, profit) |
+| `ap help gui` | GUI and update commands |
+
+**Example:**
+```
+ap help manifest
+ap help route
+ap help general
+```
 
 ### Flight Commands
 
@@ -138,6 +160,8 @@ ap fly tatooine
 ap fly ithor,kashyyyk,coruscant
 ap fly kashyyyk,corellia,kashyyyk,corellia  (leveling loop)
 ```
+
+For more flight-related help, use: `ap help general`
 
 ### Ship Commands
 
@@ -161,41 +185,67 @@ ap set capacity 500
 ap save ship
 ```
 
+For more ship-related help:
+- `ap help ship` - Ship attribute commands
+- `ap help shipmanage` - Ship management commands
+
 ### Route Commands
 
 | Command | Description |
 |---------|-------------|
-| `ap save route` | Save current route as template |
-| `ap load route [#]` | Load route template (no # shows list) |
+| `ap route add <planets>` | Create a reusable route |
+| `ap route save [name]` | Save current route as template |
+| `ap route load [#]` | Load route template (no # shows list) |
+| `ap route delete <#>` | Delete a route by ID |
+| `ap fly route` | Fly using the currently loaded route |
+
+For more route-related help, use: `ap help route`
 
 ### Manifest/Cargo Commands
 
 | Command | Description |
 |---------|-------------|
 | `ap add delivery <planet>:<resource>` | Add delivery to current manifest |
-| `ap start cargo` | Start cargo automation |
-| `ap stop cargo` | Stop cargo automation |
+| `ap manifest view` | Show current manifest details |
+| `ap manifest save [name]` | Save manifest to list |
+| `ap manifest load <#>` | Load a manifest by ID |
+| `ap manifest delete <#>` | Delete a manifest by ID |
+| `ap cargo start` | Start cargo automation |
+| `ap cargo stop` | Stop cargo automation |
+| `ap cargo pause` | Pause cargo automation - disables all triggers |
+| `ap cargo resume` | Resume paused cargo (ship empty, ready to buy) |
+| `ap cargo resume sell` | Resume paused cargo (sell remaining cargo first) |
 | `ap profit` | Show profit report |
+| `ap contraband <on/off>` | Toggle contraband mode |
 
 **Examples:**
 ```
 ap add delivery coruscant:electronics
 ap add delivery corellia:food
-ap start cargo
+ap cargo start
+ap profit
+ap cargo pause
+ap cargo resume sell
 ```
+
+For more manifest and cargo help, use: `ap help manifest`
 
 ### Landing Pad Commands
 
 | Command | Description |
 |---------|-------------|
-| `ap set pad <planet> <#>` | Set preferred landing pad for planet |
-| `ap clear pad <planet>` | Clear preferred landing pad |
+| `ap pad set <planet> "<pad>"` | Set preferred landing pad for planet |
+| `ap pad clear <planet>` | Clear preferred landing pad |
+| `ap pad list` | List all configured landing pads |
 
 **Examples:**
 ```
-ap set pad coruscant 3
-ap clear pad coruscant
+ap pad set coruscant "Eastport Station"
+ap pad set kashyyyk "Cargo Bay 3"
+ap pad list
 ```
+
+For more landing pad help, use: `ap help pad`
 
 ## How It Works
 
