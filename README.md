@@ -212,8 +212,9 @@ For more route-related help, use: `ap help route`
 | `ap manifest delete <#>` | Delete a manifest by ID |
 | `ap cargo start` | Start cargo automation |
 | `ap cargo stop` | Stop cargo automation |
-| `ap cargo pause` | Pause and save current run |
-| `ap cargo resume` | Resume paused cargo run |
+| `ap cargo pause` | Pause cargo automation - disables all triggers |
+| `ap cargo resume` | Resume paused cargo (ship empty, ready to buy) |
+| `ap cargo resume sell` | Resume paused cargo (sell remaining cargo first) |
 | `ap profit` | Show profit report |
 | `ap contraband <on/off>` | Toggle contraband mode |
 
@@ -223,6 +224,8 @@ ap add delivery coruscant:electronics
 ap add delivery corellia:food
 ap cargo start
 ap profit
+ap cargo pause
+ap cargo resume sell
 ```
 
 For more manifest and cargo help, use: `ap help manifest`

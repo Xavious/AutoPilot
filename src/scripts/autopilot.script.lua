@@ -203,9 +203,15 @@ function autopilot.alias.helpManifest()
   cecho("<yellow>ap cargo stop<reset>\n")
   cecho("   Stops your cargo run.\n\n")
   cecho("<yellow>ap cargo pause<reset>\n")
-  cecho("   Pauses cargo run: lands ship, exits, refuels, sells cargo, and saves state.\n\n")
+  cecho("   Pauses cargo buying/selling. Flight continues normally if mid-flight.\n")
+  cecho("   Ship will still arrive at destination, land, and refuel automatically.\n")
+  cecho("   Cargo remains in hold for manual handling or use resume.\n\n")
   cecho("<yellow>ap cargo resume<reset>\n")
-  cecho("   Resumes a paused cargo run: buys next cargo and continues flying.\n\n")
+  cecho("   Resumes paused cargo run. Assumes ship is empty at cargo planet.\n")
+  cecho("   Buys next cargo and continues to next destination.\n\n")
+  cecho("<yellow>ap cargo resume sell<reset>\n")
+  cecho("   Resumes paused cargo run by selling current cargo first.\n")
+  cecho("   Use this if cargo is still in hold. Buys next cargo and continues.\n\n")
   cecho("<yellow>ap profit<reset>\n")
   cecho("   Show cargo hauling financial report.\n\n")
   cecho("<yellow>ap contraband <on/off><reset>\n")
@@ -936,6 +942,16 @@ function autopilot.alias.pauseCargo()
     return
   end
 
+  -- Set pause flag - triggers will check this and halt progression
+  autopilot.cargoPaused = true
+  
+  cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run paused.<reset>\n")
+  cecho("[<cyan>AutoPilot<reset>] <gray>Current delivery:<reset> <cyan>"..autopilot.currentManifest.deliveries[autopilot.deliveryIndex].planet.."<reset> ← <magenta>"..autopilot.currentManifest.deliveries[autopilot.deliveryIndex].resource.."<reset>\n")
+  cecho("[<cyan>AutoPilot<reset>] <gray>Automation will halt at next trigger checkpoint. Ship will remain landed/paused.<reset>\n\n")
+  cecho("[<cyan>AutoPilot<reset>] <cyan>Resume options:<reset>\n")
+  cecho("[<cyan>AutoPilot<reset>]   <green>ap cargo resume<reset> - Continue with next cargo leg (assumes ship empty)\n")
+  cecho("[<cyan>AutoPilot<reset>]   <green>ap cargo resume sell<reset> - Sell current cargo first, then continue\n\n")
+  
   -- Save current state for resume
   autopilot.pausedState = {
     runningCargo = autopilot.runningCargo,
@@ -947,39 +963,8 @@ function autopilot.alias.pauseCargo()
     startTime = autopilot.startTime,
     useContraband = autopilot.useContraband
   }
-
-  cecho("[<cyan>AutoPilot<reset>] <yellow>Pausing cargo run...<reset>\n")
-
-  -- Land the ship if in flight
-  send("autopilot on")
   
-  -- Exit ship, refuel, and sell cargo
-  if autopilot.ship.exit then
-    for i = 1, #autopilot.ship.exit do
-      send(autopilot.ship.exit[i])
-    end
-  end
-  
-  send("open")
-  send("leave")
-  send("close "..autopilot.ship.name)
-  send("refuel "..autopilot.ship.name)
-
-  -- Sell current cargo
-  local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
-  local useContraband = delivery.contraband or autopilot.useContraband
-  local sellCommand = useContraband and "sellcontraband" or "sellcargo"
-  send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
-
-  -- Disable autopilot and mark as paused
-  autopilot.runningCargo = false
-  autopilot.cargoPaused = true
-  autopilot.alias.off()
-
-  -- Save state to file
   table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
-  
-  cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run paused.<reset> Use <green>ap cargo resume<reset> to continue.\n")
 end
 
 function autopilot.alias.resumeCargo()
@@ -999,25 +984,36 @@ function autopilot.alias.resumeCargo()
   autopilot.startTime = autopilot.pausedState.startTime
   autopilot.useContraband = autopilot.pausedState.useContraband
 
-  cecho("[<cyan>AutoPilot<reset>] <yellow>Resuming cargo run...<reset>\n")
-
-  -- Move to next delivery and buy cargo
-  if #autopilot.currentManifest.deliveries == autopilot.deliveryIndex then
-    autopilot.deliveryIndex = 1
-  else
-    autopilot.deliveryIndex = autopilot.deliveryIndex + 1
-  end
-
-  local nextDelivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
-  local useContraband = nextDelivery.contraband or autopilot.useContraband
-  local buyCommand = useContraband and "buycontraband" or "buycargo"
-  send(buyCommand.." "..autopilot.ship.name.." '"..nextDelivery.resource.."' "..autopilot.ship.capacity)
-
-  -- Re-enable autopilot and mark as running again
+  -- Clear pause flag
   autopilot.cargoPaused = false
+  
+  -- Check if user wants to sell current cargo first
+  local shouldSell = matches.sell and matches.sell:lower():match("sell") ~= nil
+  
+  if shouldSell then
+    -- User wants to sell the last cargo
+    local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
+    local useContraband = delivery.contraband or autopilot.useContraband
+    local sellCommand = useContraband and "sellcontraband" or "sellcargo"
+    
+    cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed (selling first).<reset>\n")
+    cecho("[<cyan>AutoPilot<reset>] Selling <magenta>"..delivery.resource.."<reset> for <cyan>"..delivery.planet.."<reset>\n")
+    
+    send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+  else
+    -- Assume ship is empty and at the correct cargo pad - buy next cargo
+    local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
+    local useContraband = delivery.contraband or autopilot.useContraband
+    local buyCommand = useContraband and "buycontraband" or "buycargo"
+    
+    cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed.<reset>\n")
+    cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..delivery.resource.."<reset> for delivery to <cyan>"..delivery.planet.."<reset>\n")
+    
+    send(buyCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+  end
+  
+  -- Re-enable autopilot
   autopilot.alias.on()
-
-  cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..nextDelivery.resource.."<reset> for delivery to <cyan>"..nextDelivery.planet.."<reset>\n")
   
   -- Save state to file
   table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
@@ -1050,6 +1046,13 @@ end
 
 function autopilot.trigger.openHatch()
   debugc("autopilot.trigger.openHatch()")
+  
+  -- If cargo run is paused, don't launch
+  if autopilot.cargoPaused then
+    cecho("\n[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Launch halted. Use <green>ap cargo resume<reset> to continue.\n")
+    return
+  end
+  
   send("refuel "..autopilot.ship.name)
   send("enter "..autopilot.ship.name)
   send("close")
@@ -1066,6 +1069,13 @@ end
 
 function autopilot.trigger.launch()
   debugc("autopilot.trigger.launch()")
+  
+  -- If cargo run is paused, don't continue
+  if autopilot.cargoPaused then
+    cecho("\n[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Flight halted. Use <green>ap cargo resume<reset> to continue.\n")
+    return
+  end
+  
   enableTrigger("autopilot.trigger.showplanet")
   send("showplanet "..autopilot.destination.planet)
 end
@@ -1154,9 +1164,17 @@ function autopilot.trigger.land()
       return
     end
 
-    -- No more waypoints - we're at the delivery planet, sell cargo
+    -- No more waypoints - we're at the delivery planet
     cecho("[<cyan>AutoPilot<reset>] <green>Delivery destination reached:<reset> <cyan>"..delivery.planet.."<reset>\n")
-    -- Use per-delivery contraband flag if set, otherwise fall back to global setting
+    
+    -- If cargo run is paused, don't sell cargo - leave it for manual handling
+    if autopilot.cargoPaused then
+      cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Ship refueled. Cargo remains in hold.\n")
+      cecho("[<cyan>AutoPilot<reset>] <gray>Sell cargo manually or use<reset> <green>ap cargo resume<reset> <gray>when ready.<reset>\n")
+      return
+    end
+    
+    -- Not paused - proceed with selling cargo
     local useContraband = delivery.contraband or autopilot.useContraband
     local sellCommand = useContraband and "sellcontraband" or "sellcargo"
     send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
@@ -1219,6 +1237,12 @@ function autopilot.trigger.cargoSold()
   debugc("autopilot.trigger.cargoSold()")
   autopilot.revenue = autopilot.revenue + matches.cost
   autopilot.profit = autopilot.revenue - autopilot.expense - autopilot.fuelCost
+
+  -- Check if cargo run is paused - if so, don't buy next cargo
+  if autopilot.cargoPaused then
+    cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Use <green>ap cargo resume<reset> to continue.\n")
+    return
+  end
 
   -- Move to next delivery
   if #autopilot.currentManifest.deliveries == autopilot.deliveryIndex then

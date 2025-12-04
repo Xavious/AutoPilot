@@ -128,7 +128,7 @@
        {
               "name": "autopilot.alias.cargo.resume",
               "isActive": "yes",
-              "regex": "^ap cargo resume$",
+              "regex": "^ap cargo resume\\s*(?<sell>.*)$",
               "script": "",
               "isFolder": "no"
        },
