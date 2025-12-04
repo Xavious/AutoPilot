@@ -2,42 +2,42 @@
        {
               "name": "autopilot.alias.fly",
               "isActive": "yes",
-              "regex": "^ap fly\\s*(?\u003cplanets\u003e.*)$",
+              "regex": "^ap fly\\s*(?<planets>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
               "name": "autopilot.alias.ship.set",
               "isActive": "yes",
-              "regex": "^ap ship set\\s*(?\u003cship\u003e.*)$",
+              "regex": "^ap ship set\\s*(?<ship>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
               "name": "autopilot.alias.enter.set",
               "isActive": "yes",
-              "regex": "^ap enter set\\s*(?\u003ccommands\u003e.*)$",
+              "regex": "^ap enter set\\s*(?<commands>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
               "name": "autopilot.alias.exit.set",
               "isActive": "yes",
-              "regex": "^ap exit set\\s*(?\u003ccommands\u003e.*)$",
+              "regex": "^ap exit set\\s*(?<commands>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
               "name": "autopilot.alias.hatch.set",
               "isActive": "yes",
-              "regex": "^ap hatch set\\s*(?\u003ccode\u003e.*)$",
+              "regex": "^ap hatch set\\s*(?<code>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
               "name": "autopilot.alias.capacity.set",
               "isActive": "yes",
-              "regex": "^ap capacity set\\s*(?\u003ccapacity\u003e.*)$",
+              "regex": "^ap capacity set\\s*(?<capacity>.*)$",
               "script": "",
               "isFolder": "no"
        },
@@ -72,14 +72,14 @@
        {
               "name": "autopilot.alias.ship.load",
               "isActive": "yes",
-              "regex": "^ap ship load\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap ship load\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
               "name": "autopilot.alias.route.load",
               "isActive": "yes",
-              "regex": "^ap route load\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap route load\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
@@ -100,7 +100,7 @@
        {
               "name": "autopilot.alias.stop.add",
               "isActive": "yes",
-              "regex": "^ap stop add\\s*(?:(?\u003cplanet\u003e[\\w ]+))?(?::(?\u003cresource\\u003e[\\w ]+))?$",
+              "regex": "^ap stop add\\s*(?:(?<planet>[\\w ]+))?(?::(?<resource>[\\w ]+))?$",
               "script": "",
               "isFolder": "no"
        },
@@ -135,14 +135,14 @@
        {
               "name": "autopilot.alias.ship.delete",
               "isActive": "yes",
-              "regex": "^ap ship delete\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap ship delete\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
               "name": "autopilot.alias.route.delete",
               "isActive": "yes",
-              "regex": "^ap route delete\\s*(?\u003cindex\u003e.*)$",
+              "regex": "^ap route delete\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },

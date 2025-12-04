@@ -1262,8 +1262,8 @@ function autopilot.trigger.cargoSold()
   local buyCommand = useContraband and "buycontraband" or "buycargo"
   send(buyCommand.." "..autopilot.ship.name.." '"..nextDelivery.resource.. "' "..autopilot.ship.capacity)
   cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..nextDelivery.resource.."<reset> for delivery to <cyan>"..nextDelivery.planet.."<reset>\n")
+end
 
-  
 function autopilot.trigger.refuel()
   debugc("autopilot.trigger.refuel()")
   local nocomma = matches.cost:gsub(",","")
