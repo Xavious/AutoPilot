@@ -78,6 +78,24 @@ end
 function autopilot.alias.profit()
   local now = getEpoch()
   local elapsed = now - autopilot.startTime
+  local function formatCredits(value, decimals)
+    decimals = decimals or 0
+    local num = tonumber(value) or 0
+    local numStr = string.format("%." .. decimals .. "f", num)
+    local sign = num < 0 and "-" or ""
+    local integer, fraction = numStr:match("^%-?(%d+)(%.%d+)?$")
+    integer = integer or tostring(math.abs(math.floor(num)))
+
+    -- Insert commas manually
+    local parts = {}
+    while #integer > 3 do
+      table.insert(parts, 1, integer:sub(#integer-2))
+      integer = integer:sub(1, #integer-3)
+    end
+    table.insert(parts, 1, integer)
+
+    return sign .. table.concat(parts, ",") .. (fraction or "")
+  end
   
   -- Convert start time to a formatted local string
   local startTimeStr = os.date("%c", autopilot.startTime)
@@ -87,18 +105,18 @@ function autopilot.alias.profit()
   local minutes = math.floor((elapsed % 3600) / 60)
   
   autopilot.profit = autopilot.revenue - autopilot.expense - autopilot.fuelCost
-  local perHour = (autopilot.profit / elapsed) * 3600
+  local perHour = elapsed > 0 and (autopilot.profit / elapsed) * 3600 or 0
   
   cecho("<white>---------------------------------------------\n")
   cecho("<yellow>Cargo Session Financial Report\n")
   cecho("<white>---------------------------------------------\n")
   cecho("<cyan>Time Started    : <reset>" .. startTimeStr .. "\n")
   cecho("<cyan>Elapsed Time    : <reset>" .. hours .. "h " .. minutes .. "m\n")
-  cecho("<cyan>Expense         : <reset>" .. autopilot.expense .. "\n")
-  cecho("<cyan>Revenue         : <reset>" .. autopilot.revenue .. "\n")
-  cecho("<cyan>Fuel Cost       : <reset>" .. autopilot.fuelCost .. "\n")
-  cecho("<cyan>Profit          : <reset>" .. autopilot.profit .. "\n")
-  cecho("<cyan>Credits/Hour    : <reset>" .. string.format("%.2f", perHour) .. "\n")
+  cecho("<cyan>Expense         : <reset>" .. formatCredits(autopilot.expense) .. "\n")
+  cecho("<cyan>Revenue         : <reset>" .. formatCredits(autopilot.revenue) .. "\n")
+  cecho("<cyan>Fuel Cost       : <reset>" .. formatCredits(autopilot.fuelCost) .. "\n")
+  cecho("<cyan>Profit          : <reset>" .. formatCredits(autopilot.profit) .. "\n")
+  cecho("<cyan>Credits/Hour    : <reset>" .. formatCredits(perHour, 2) .. "\n")
   cecho("<white>---------------------------------------------<reset>\n")
 end
 
