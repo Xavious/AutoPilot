@@ -1759,6 +1759,9 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
   -- Store selected route (nil for direct, number for route index)
   local selectedRoute = delivery.route or nil
 
+  -- Store selected contraband state
+  local selectedContraband = delivery.contraband or false
+
   -- Use showForm for planet and resource only
   autopilot.showForm(
     isEdit and "EDIT DELIVERY" or "ADD DELIVERY",
@@ -1780,7 +1783,8 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
       -- Build delivery object
       local newDelivery = {
         planet = values.planet,
-        resource = values.resource
+        resource = values.resource,
+        contraband = selectedContraband
       }
       if selectedRoute ~= nil then
         newDelivery.route = selectedRoute
@@ -1890,6 +1894,62 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
   -- Initial display
   refreshRouteConsole()
 
+  -- ============================================================================
+  -- CONTRABAND TOGGLE SECTION
+  -- ============================================================================
+  -- Position after route section: 34% + 15% (route console) + 3% spacing = 52%
+  local contrabandYPos = 52
+
+  -- Contraband label
+  local contrabandLabel = Geyser.Label:new({
+    x = "3%", y = contrabandYPos .. "%",
+    width = "20%", height = "5%"
+  }, autopilot.gui.formContainer)
+  contrabandLabel:setStyleSheet([[
+    background-color: transparent;
+    color: ]]..autopilot.gui.colors.text..[[;
+    font-size: 12pt;
+    qproperty-alignment: 'AlignVCenter|AlignLeft';
+  ]])
+  contrabandLabel:echo("Contraband:")
+  table.insert(autopilot.gui.formData.uiElements, contrabandLabel)
+
+  -- Create MiniConsole for contraband toggle
+  local contrabandConsole = Geyser.MiniConsole:new({
+    x = "3%", y = contrabandYPos .. "%",
+    width = "94%", height = "8%",
+    autoWrap = true,
+    scrollBar = false,
+    fontSize = 12
+  }, autopilot.gui.formContainer)
+  contrabandConsole:setColor(47, 49, 54)
+  table.insert(autopilot.gui.formData.uiElements, contrabandConsole)
+
+  -- Helper function to refresh the contraband toggle display
+  local function refreshContrabandToggle()
+    contrabandConsole:clear()
+
+    if selectedContraband then
+      contrabandConsole:cecho("<red>⚠ ENABLED<white> - Using contraband at this planet  ")
+      contrabandConsole:fg("yellow")
+      contrabandConsole:echoLink("[Disable]", function()
+        selectedContraband = false
+        refreshContrabandToggle()
+      end, "Click to disable contraband for this delivery", true)
+    else
+      contrabandConsole:cecho("<green>o DISABLED<white> - Using standard cargo commands  ")
+      contrabandConsole:fg("yellow")
+      contrabandConsole:echoLink("[Enable]", function()
+        selectedContraband = true
+        refreshContrabandToggle()
+      end, "Click to enable contraband for this delivery", true)
+    end
+    contrabandConsole:resetFormat()
+  end
+
+  -- Initial contraband toggle display
+  refreshContrabandToggle()
+
 end
 
 -- Helper function to format route display text
@@ -1937,7 +1997,7 @@ function autopilot.refreshManifestEditor()
   console:fg("yellow")
   console:echoLink("[Edit Name]", [[autopilot.editManifestName()]], "Edit manifest name", true)
   console:resetFormat()
-  console:cecho("\n\n<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  console:cecho("\n\n<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Deliveries section
   if #deliveries == 0 then
@@ -1946,8 +2006,9 @@ function autopilot.refreshManifestEditor()
     console:cecho("<white>Deliveries:\n\n")
     for i, delivery in ipairs(deliveries) do
       local routeText = autopilot.formatRouteText(delivery.route)
-      console:cecho(string.format("<white>%d. <cyan>%s <white>→ <yellow>%s%s  ",
-        i, delivery.planet or "?", delivery.resource or "?", routeText))
+      local contrabandIndicator = delivery.contraband and " <red>⚠ [CONTRABAND]<white>" or ""
+      console:cecho(string.format("<white>%d. <cyan>%s <white>→ <yellow>%s%s%s  ",
+        i, delivery.planet or "?", delivery.resource or "?", routeText, contrabandIndicator))
 
       -- Edit button
       console:fg("yellow")
@@ -1964,7 +2025,7 @@ function autopilot.refreshManifestEditor()
   end
 
   -- Action buttons separator
-  console:cecho("\n<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  console:cecho("\n<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add Delivery button
   console:fg("green")
@@ -2488,9 +2549,9 @@ function autopilot.displayShipsTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                        SAVED SHIPS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2550,7 +2611,7 @@ function autopilot.displayShipsTab()
     autopilot.gui.content:cecho("\n\n")
   end
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Ship]<white> to add, <yellow>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
 
@@ -2560,9 +2621,9 @@ function autopilot.displayRoutesTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                        SAVED ROUTES\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2617,7 +2678,7 @@ function autopilot.displayRoutesTab()
     autopilot.gui.content:cecho("\n\n")
   end
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Route]<white> to add, <yellow>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
 
@@ -2627,9 +2688,9 @@ function autopilot.displayManifestsTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                      SAVED MANIFESTS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2652,8 +2713,9 @@ function autopilot.displayManifestsTab()
       autopilot.gui.content:cecho("    <white>Deliveries:\n")
       for j, delivery in ipairs(manifest.deliveries) do
         local routeText = autopilot.formatRouteText(delivery.route)
-        autopilot.gui.content:cecho(string.format("      <green>%s <white>→ <yellow>%s%s\n",
-          delivery.planet or "?", delivery.resource or "?", routeText))
+        local contrabandIndicator = delivery.contraband and " <red>⚠ [CONTRABAND]<white>" or ""
+        autopilot.gui.content:cecho(string.format("      <green>%s <white>→ <yellow>%s%s%s\n",
+          delivery.planet or "?", delivery.resource or "?", routeText, contrabandIndicator))
       end
     end
 
@@ -2682,7 +2744,7 @@ function autopilot.displayManifestsTab()
     autopilot.gui.content:cecho("\n\n")
   end
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Manifest]<white> to add, <cyan>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
 
@@ -2692,9 +2754,9 @@ function autopilot.displayPadsTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                   PREFERRED LANDING PADS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2728,7 +2790,7 @@ function autopilot.displayPadsTab()
     autopilot.gui.content:cecho("\n")
   end
 
-  autopilot.gui.content:cecho("\n<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("\n<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho(string.format("<white>Total: <yellow>%d<white> preferred pads configured\n", padCount))
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Pad]<white> to add, <yellow>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
@@ -2739,9 +2801,9 @@ function autopilot.displayStatusTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                    AUTOPILOT STATUS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Current ship info
   autopilot.gui.content:cecho("<white>Current Ship:\n")
@@ -2791,11 +2853,15 @@ function autopilot.displayStatusTab()
 
   autopilot.gui.content:cecho("<white>Autopilot Status:\n")
   if autopilot.runningCargo then
-    autopilot.gui.content:cecho("  <green>● ACTIVE (RUNNING CARGO)<white>  ")
+    if autopilot.cargoPaused then
+      autopilot.gui.content:cecho("  <yellow>* PAUSED (CARGO PAUSED)<white>  ")
+    else
+      autopilot.gui.content:cecho("  <green>* ACTIVE (RUNNING CARGO)<white>  ")
+    end
   elseif flightEnabled > 0 then
-    autopilot.gui.content:cecho("  <green>● ACTIVE<white>  ")
+    autopilot.gui.content:cecho("  <green>* ACTIVE<white>  ")
   else
-    autopilot.gui.content:cecho("  <red>○ Idle<white>  ")
+    autopilot.gui.content:cecho("  <red>o Idle<white>  ")
   end
 
   -- Toggle button for autopilot triggers
@@ -2874,7 +2940,7 @@ function autopilot.displayStatusTab()
   autopilot.gui.content:cecho("\n\n")
 
   -- Statistics
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Saved Configurations:\n")
   autopilot.gui.content:cecho(string.format("  Ships: <yellow>%d<white>  |  Routes: <yellow>%d<white>  |  Manifests: <yellow>%d<white>  |  Pads: <yellow>%d\n",
     autopilot.ships and #autopilot.ships or 0,
