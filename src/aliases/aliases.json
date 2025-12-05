@@ -7,35 +7,35 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.ship.set",
+              "name": "autopilot.alias.setShip",
               "isActive": "yes",
               "regex": "^ap ship set\\s*(?<ship>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.enter.set",
+              "name": "autopilot.alias.setEnter",
               "isActive": "yes",
               "regex": "^ap enter set\\s*(?<commands>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.exit.set",
+              "name": "autopilot.alias.setExit",
               "isActive": "yes",
               "regex": "^ap exit set\\s*(?<commands>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.hatch.set",
+              "name": "autopilot.alias.setHatch",
               "isActive": "yes",
               "regex": "^ap hatch set\\s*(?<code>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.capacity.set",
+              "name": "autopilot.alias.setCapacity",
               "isActive": "yes",
               "regex": "^ap capacity set\\s*(?<capacity>.*)$",
               "script": "",
@@ -49,14 +49,14 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.ship.save",
+              "name": "autopilot.alias.saveShip",
               "isActive": "yes",
               "regex": "^ap ship save$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.route.save",
+              "name": "autopilot.alias.saveRoute",
               "isActive": "yes",
               "regex": "^ap route save\\s*(?<name>.*)$",
               "script": "",
@@ -70,14 +70,14 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.ship.load",
+              "name": "autopilot.alias.loadShip",
               "isActive": "yes",
               "regex": "^ap ship load\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.route.load",
+              "name": "autopilot.alias.loadRoute",
               "isActive": "yes",
               "regex": "^ap route load\\s*(?<index>.*)$",
               "script": "",
@@ -105,20 +105,21 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.cargo.start",
+              "name": "autopilot.alias.startCargo",
               "isActive": "yes",
               "regex": "^ap cargo start$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.cargo.stop",
+              "name": "autopilot.alias.stopCargo",
               "isActive": "yes",
               "regex": "^ap cargo stop$",
               "script": "",
               "isFolder": "no"
        },
        {
+<<<<<<< Updated upstream
               "name": "autopilot.alias.cargo.pause",
               "isActive": "yes",
               "regex": "^ap cargo pause$",
@@ -134,13 +135,16 @@
        },
        {
               "name": "autopilot.alias.ship.delete",
+=======
+              "name": "autopilot.alias.deleteShip",
+>>>>>>> Stashed changes
               "isActive": "yes",
               "regex": "^ap ship delete\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.route.delete",
+              "name": "autopilot.alias.deleteRoute",
               "isActive": "yes",
               "regex": "^ap route delete\\s*(?<index>.*)$",
               "script": "",
@@ -168,77 +172,77 @@
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.route.add",
+              "name": "autopilot.alias.addRoute",
               "isActive": "yes",
               "regex": "^ap route add\\s*(?<planets>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.delivery.add",
+              "name": "autopilot.alias.addDelivery",
               "isActive": "yes",
               "regex": "^ap delivery add\\s+(?<planet>[^:]+):(?<resource>.+?)(?:\\s+(?<routeIndex>\\d+))?$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.manifest.save",
+              "name": "autopilot.alias.saveManifest",
               "isActive": "yes",
               "regex": "^ap manifest save\\s*(?<name>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.manifest.load",
+              "name": "autopilot.alias.loadManifest",
               "isActive": "yes",
               "regex": "^ap manifest load\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.manifest.delete",
+              "name": "autopilot.alias.deleteManifest",
               "isActive": "yes",
               "regex": "^ap manifest delete\\s*(?<index>.*)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.manifest.view",
+              "name": "autopilot.alias.viewManifest",
               "isActive": "yes",
               "regex": "^ap manifest view$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.manifest.clear",
+              "name": "autopilot.alias.clearManifest",
               "isActive": "yes",
               "regex": "^ap manifest clear$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.route.clear",
+              "name": "autopilot.alias.clearRoute",
               "isActive": "yes",
               "regex": "^ap route clear$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.pad.set",
+              "name": "autopilot.alias.setPad",
               "isActive": "yes",
               "regex": "^ap pad set(?:\\s+(?<planet>.+?)(?:\\s+\"(?<pad>.+)\")?)?$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.pad.clear",
+              "name": "autopilot.alias.clearPad",
               "isActive": "yes",
               "regex": "^ap pad clear\\s+(?<planet>.+)$",
               "script": "",
               "isFolder": "no"
        },
        {
-              "name": "autopilot.alias.pad.list",
+              "name": "autopilot.alias.listPads",
               "isActive": "yes",
               "regex": "^ap pad list$",
               "script": "",
