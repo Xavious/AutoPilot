@@ -2183,6 +2183,15 @@ function autopilot.editDeliveryInManifest(deliveryIndex)
       -- Editing existing manifest - update saved copy and save to disk
       autopilot.manifests[manifestIndex].deliveries[deliveryIndex] = updatedDelivery
       autopilot.gui.workingManifest.deliveries[deliveryIndex] = updatedDelivery
+      
+      -- Also update currentManifest if it's the same manifest that's loaded
+      if autopilot.currentManifest and autopilot.currentManifest.deliveries then
+        -- Check if this is the same manifest by comparing delivery count and content
+        if #autopilot.currentManifest.deliveries == #autopilot.gui.workingManifest.deliveries then
+          autopilot.currentManifest.deliveries[deliveryIndex] = updatedDelivery
+        end
+      end
+      
       table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
       cecho("\n[<cyan>AutoPilot<reset>] Delivery updated and saved to disk.\n")
     else
