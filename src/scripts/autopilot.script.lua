@@ -78,6 +78,24 @@ end
 function autopilot.alias.profit()
   local now = getEpoch()
   local elapsed = now - autopilot.startTime
+  local function formatCredits(value, decimals)
+    decimals = decimals or 0
+    local num = tonumber(value) or 0
+    local numStr = string.format("%." .. decimals .. "f", num)
+    local sign = num < 0 and "-" or ""
+    local integer, fraction = numStr:match("^%-?(%d+)(%.%d+)?$")
+    integer = integer or tostring(math.abs(math.floor(num)))
+
+    -- Insert commas manually
+    local parts = {}
+    while #integer > 3 do
+      table.insert(parts, 1, integer:sub(#integer-2))
+      integer = integer:sub(1, #integer-3)
+    end
+    table.insert(parts, 1, integer)
+
+    return sign .. table.concat(parts, ",") .. (fraction or "")
+  end
   
   -- Convert start time to a formatted local string
   local startTimeStr = os.date("%c", autopilot.startTime)
@@ -87,18 +105,18 @@ function autopilot.alias.profit()
   local minutes = math.floor((elapsed % 3600) / 60)
   
   autopilot.profit = autopilot.revenue - autopilot.expense - autopilot.fuelCost
-  local perHour = (autopilot.profit / elapsed) * 3600
+  local perHour = elapsed > 0 and (autopilot.profit / elapsed) * 3600 or 0
   
   cecho("<white>---------------------------------------------\n")
   cecho("<yellow>Cargo Session Financial Report\n")
   cecho("<white>---------------------------------------------\n")
   cecho("<cyan>Time Started    : <reset>" .. startTimeStr .. "\n")
   cecho("<cyan>Elapsed Time    : <reset>" .. hours .. "h " .. minutes .. "m\n")
-  cecho("<cyan>Expense         : <reset>" .. autopilot.expense .. "\n")
-  cecho("<cyan>Revenue         : <reset>" .. autopilot.revenue .. "\n")
-  cecho("<cyan>Fuel Cost       : <reset>" .. autopilot.fuelCost .. "\n")
-  cecho("<cyan>Profit          : <reset>" .. autopilot.profit .. "\n")
-  cecho("<cyan>Credits/Hour    : <reset>" .. string.format("%.2f", perHour) .. "\n")
+  cecho("<cyan>Expense         : <reset>" .. formatCredits(autopilot.expense) .. "\n")
+  cecho("<cyan>Revenue         : <reset>" .. formatCredits(autopilot.revenue) .. "\n")
+  cecho("<cyan>Fuel Cost       : <reset>" .. formatCredits(autopilot.fuelCost) .. "\n")
+  cecho("<cyan>Profit          : <reset>" .. formatCredits(autopilot.profit) .. "\n")
+  cecho("<cyan>Credits/Hour    : <reset>" .. formatCredits(perHour, 2) .. "\n")
   cecho("<white>---------------------------------------------<reset>\n")
 end
 
@@ -926,9 +944,7 @@ function autopilot.alias.startCargo()
 
   -- Buy cargo for first delivery
   local firstDelivery = autopilot.currentManifest.deliveries[1]
-  -- Use per-delivery contraband flag if set, otherwise fall back to global setting
-  local useContraband = firstDelivery.contraband or autopilot.useContraband
-  local buyCommand = useContraband and "buycontraband" or "buycargo"
+  local buyCommand = autopilot.getCargoCommand(firstDelivery, "buy")
   send(buyCommand.." "..autopilot.ship.name.." '"..firstDelivery.resource.. "' "..autopilot.ship.capacity)
   cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run started<reset> | Buying <magenta>"..firstDelivery.resource.."<reset> for delivery to <cyan>"..firstDelivery.planet.."<reset>\n")
 end
@@ -997,8 +1013,7 @@ function autopilot.alias.resumeCargo()
   if shouldSell then
     -- User wants to sell the last cargo
     local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
-    local useContraband = delivery.contraband or autopilot.useContraband
-    local sellCommand = useContraband and "sellcontraband" or "sellcargo"
+    local sellCommand = autopilot.getCargoCommand(delivery, "sell")
     
     cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed (selling first).<reset>\n")
     cecho("[<cyan>AutoPilot<reset>] Selling <magenta>"..delivery.resource.."<reset> for <cyan>"..delivery.planet.."<reset>\n")
@@ -1007,8 +1022,7 @@ function autopilot.alias.resumeCargo()
   else
     -- Assume ship is empty and at the correct cargo pad - buy next cargo
     local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
-    local useContraband = delivery.contraband or autopilot.useContraband
-    local buyCommand = useContraband and "buycontraband" or "buycargo"
+    local buyCommand = autopilot.getCargoCommand(delivery, "buy")
     
     cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed.<reset>\n")
     cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..delivery.resource.."<reset> for delivery to <cyan>"..delivery.planet.."<reset>\n")
@@ -1045,6 +1059,18 @@ function autopilot.alias.contraband()
       cecho("<green>DISABLED<reset>\n")
     end
     cecho("----------------------------------------------\n")
+  end
+end
+
+-- Helper function to determine which cargo command to use based on delivery and global contraband flags
+-- Returns the appropriate cargo command (buycontraband, buycargo, sellcontraband, or sellcargo)
+function autopilot.getCargoCommand(delivery, commandType)
+  -- Per-delivery contraband flag takes precedence over global setting
+  local useContraband = delivery.contraband or autopilot.useContraband
+  if commandType == "buy" then
+    return useContraband and "buycontraband" or "buycargo"
+  else
+    return useContraband and "sellcontraband" or "sellcargo"
   end
 end
 
@@ -1168,20 +1194,18 @@ function autopilot.trigger.land()
       return
     end
 
-    -- No more waypoints - we're at the delivery planet
-    cecho("[<cyan>AutoPilot<reset>] <green>Delivery destination reached:<reset> <cyan>"..delivery.planet.."<reset>\n")
-    
-    -- If cargo run is paused, don't sell cargo - leave it for manual handling
+    -- If cargo run is paused, don't handle cargo - leave it for manual handling
     if autopilot.cargoPaused then
       cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Ship refueled. Cargo remains in hold.\n")
       cecho("[<cyan>AutoPilot<reset>] <gray>Sell cargo manually or use<reset> <green>ap cargo resume<reset> <gray>when ready.<reset>\n")
       return
     end
+
+    -- When landing, we only sell cargo - buying happens via cargoPurchased trigger
+    local cargoCommand = autopilot.getCargoCommand(delivery, "sell")
     
-    -- Not paused - proceed with selling cargo
-    local useContraband = delivery.contraband or autopilot.useContraband
-    local sellCommand = useContraband and "sellcontraband" or "sellcargo"
-    send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+    cecho("[<cyan>AutoPilot<reset>] <green>Delivery destination reached:<reset> <cyan>"..delivery.planet.."<reset>\n")
+    send(cargoCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
     return
   end
 
@@ -1242,11 +1266,12 @@ function autopilot.trigger.cargoSold()
   autopilot.revenue = autopilot.revenue + matches.cost
   autopilot.profit = autopilot.revenue - autopilot.expense - autopilot.fuelCost
 
-  -- Check if cargo run is paused - if so, don't buy next cargo
+  -- Check if cargo run is paused - if so, don't move to next delivery
   if autopilot.cargoPaused then
     cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Use <green>ap cargo resume<reset> to continue.\n")
     return
   end
+  local oldDelivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
 
   -- Move to next delivery
   if #autopilot.currentManifest.deliveries == autopilot.deliveryIndex then
@@ -1258,8 +1283,7 @@ function autopilot.trigger.cargoSold()
   -- Buy cargo for next delivery
   local nextDelivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
   -- Use per-delivery contraband flag if set, otherwise fall back to global setting
-  local useContraband = nextDelivery.contraband or autopilot.useContraband
-  local buyCommand = useContraband and "buycontraband" or "buycargo"
+  local buyCommand = autopilot.getCargoCommand(oldDelivery, "buy")
   send(buyCommand.." "..autopilot.ship.name.." '"..nextDelivery.resource.. "' "..autopilot.ship.capacity)
   cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..nextDelivery.resource.."<reset> for delivery to <cyan>"..nextDelivery.planet.."<reset>\n")
 end
@@ -1759,6 +1783,9 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
   -- Store selected route (nil for direct, number for route index)
   local selectedRoute = delivery.route or nil
 
+  -- Store selected contraband state
+  local selectedContraband = delivery.contraband or false
+
   -- Use showForm for planet and resource only
   autopilot.showForm(
     isEdit and "EDIT DELIVERY" or "ADD DELIVERY",
@@ -1780,7 +1807,8 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
       -- Build delivery object
       local newDelivery = {
         planet = values.planet,
-        resource = values.resource
+        resource = values.resource,
+        contraband = selectedContraband
       }
       if selectedRoute ~= nil then
         newDelivery.route = selectedRoute
@@ -1890,6 +1918,62 @@ function autopilot.showDeliveryForm(manifestIndex, deliveryIndex)
   -- Initial display
   refreshRouteConsole()
 
+  -- ============================================================================
+  -- CONTRABAND TOGGLE SECTION
+  -- ============================================================================
+  -- Position after route section: 34% + 15% (route console) + 3% spacing = 52%
+  local contrabandYPos = 52
+
+  -- Contraband label
+  local contrabandLabel = Geyser.Label:new({
+    x = "3%", y = contrabandYPos .. "%",
+    width = "20%", height = "5%"
+  }, autopilot.gui.formContainer)
+  contrabandLabel:setStyleSheet([[
+    background-color: transparent;
+    color: ]]..autopilot.gui.colors.text..[[;
+    font-size: 12pt;
+    qproperty-alignment: 'AlignVCenter|AlignLeft';
+  ]])
+  contrabandLabel:echo("Contraband:")
+  table.insert(autopilot.gui.formData.uiElements, contrabandLabel)
+
+  -- Create MiniConsole for contraband toggle
+  local contrabandConsole = Geyser.MiniConsole:new({
+    x = "3%", y = contrabandYPos .. "%",
+    width = "94%", height = "8%",
+    autoWrap = true,
+    scrollBar = false,
+    fontSize = 12
+  }, autopilot.gui.formContainer)
+  contrabandConsole:setColor(47, 49, 54)
+  table.insert(autopilot.gui.formData.uiElements, contrabandConsole)
+
+  -- Helper function to refresh the contraband toggle display
+  local function refreshContrabandToggle()
+    contrabandConsole:clear()
+
+    if selectedContraband then
+      contrabandConsole:cecho("<red>⚠ ENABLED<white> - Using contraband at this planet  ")
+      contrabandConsole:fg("yellow")
+      contrabandConsole:echoLink("[Disable]", function()
+        selectedContraband = false
+        refreshContrabandToggle()
+      end, "Click to disable contraband for this delivery", true)
+    else
+      contrabandConsole:cecho("<green>o DISABLED<white> - Using standard cargo commands  ")
+      contrabandConsole:fg("yellow")
+      contrabandConsole:echoLink("[Enable]", function()
+        selectedContraband = true
+        refreshContrabandToggle()
+      end, "Click to enable contraband for this delivery", true)
+    end
+    contrabandConsole:resetFormat()
+  end
+
+  -- Initial contraband toggle display
+  refreshContrabandToggle()
+
 end
 
 -- Helper function to format route display text
@@ -1937,7 +2021,7 @@ function autopilot.refreshManifestEditor()
   console:fg("yellow")
   console:echoLink("[Edit Name]", [[autopilot.editManifestName()]], "Edit manifest name", true)
   console:resetFormat()
-  console:cecho("\n\n<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  console:cecho("\n\n<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Deliveries section
   if #deliveries == 0 then
@@ -1946,8 +2030,9 @@ function autopilot.refreshManifestEditor()
     console:cecho("<white>Deliveries:\n\n")
     for i, delivery in ipairs(deliveries) do
       local routeText = autopilot.formatRouteText(delivery.route)
-      console:cecho(string.format("<white>%d. <cyan>%s <white>→ <yellow>%s%s  ",
-        i, delivery.planet or "?", delivery.resource or "?", routeText))
+      local contrabandIndicator = delivery.contraband and " <red>⚠ [CONTRABAND]<white>" or ""
+      console:cecho(string.format("<white>%d. <cyan>%s <white>→ <yellow>%s%s%s  ",
+        i, delivery.planet or "?", delivery.resource or "?", routeText, contrabandIndicator))
 
       -- Edit button
       console:fg("yellow")
@@ -1964,7 +2049,7 @@ function autopilot.refreshManifestEditor()
   end
 
   -- Action buttons separator
-  console:cecho("\n<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  console:cecho("\n<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add Delivery button
   console:fg("green")
@@ -2122,6 +2207,15 @@ function autopilot.editDeliveryInManifest(deliveryIndex)
       -- Editing existing manifest - update saved copy and save to disk
       autopilot.manifests[manifestIndex].deliveries[deliveryIndex] = updatedDelivery
       autopilot.gui.workingManifest.deliveries[deliveryIndex] = updatedDelivery
+      
+      -- Also update currentManifest if it's the same manifest that's loaded
+      if autopilot.currentManifest and autopilot.currentManifest.deliveries then
+        -- Check if this is the same manifest by comparing delivery count and content
+        if #autopilot.currentManifest.deliveries == #autopilot.gui.workingManifest.deliveries then
+          autopilot.currentManifest.deliveries[deliveryIndex] = updatedDelivery
+        end
+      end
+      
       table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
       cecho("\n[<cyan>AutoPilot<reset>] Delivery updated and saved to disk.\n")
     else
@@ -2488,9 +2582,9 @@ function autopilot.displayShipsTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                        SAVED SHIPS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2550,7 +2644,7 @@ function autopilot.displayShipsTab()
     autopilot.gui.content:cecho("\n\n")
   end
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Ship]<white> to add, <yellow>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
 
@@ -2560,9 +2654,9 @@ function autopilot.displayRoutesTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                        SAVED ROUTES\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2617,7 +2711,7 @@ function autopilot.displayRoutesTab()
     autopilot.gui.content:cecho("\n\n")
   end
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Route]<white> to add, <yellow>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
 
@@ -2627,9 +2721,9 @@ function autopilot.displayManifestsTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                      SAVED MANIFESTS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2652,8 +2746,9 @@ function autopilot.displayManifestsTab()
       autopilot.gui.content:cecho("    <white>Deliveries:\n")
       for j, delivery in ipairs(manifest.deliveries) do
         local routeText = autopilot.formatRouteText(delivery.route)
-        autopilot.gui.content:cecho(string.format("      <green>%s <white>→ <yellow>%s%s\n",
-          delivery.planet or "?", delivery.resource or "?", routeText))
+        local contrabandIndicator = delivery.contraband and " <red>⚠ [CONTRABAND]<white>" or ""
+        autopilot.gui.content:cecho(string.format("      <green>%s <white>→ <yellow>%s%s%s\n",
+          delivery.planet or "?", delivery.resource or "?", routeText, contrabandIndicator))
       end
     end
 
@@ -2682,7 +2777,7 @@ function autopilot.displayManifestsTab()
     autopilot.gui.content:cecho("\n\n")
   end
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Manifest]<white> to add, <cyan>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
 
@@ -2692,9 +2787,9 @@ function autopilot.displayPadsTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                   PREFERRED LANDING PADS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Add New button
   autopilot.gui.content:cecho("<white>")
@@ -2728,7 +2823,7 @@ function autopilot.displayPadsTab()
     autopilot.gui.content:cecho("\n")
   end
 
-  autopilot.gui.content:cecho("\n<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("\n<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho(string.format("<white>Total: <yellow>%d<white> preferred pads configured\n", padCount))
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Pad]<white> to add, <yellow>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
@@ -2739,9 +2834,9 @@ function autopilot.displayStatusTab()
   autopilot.gui.content:show()
   autopilot.gui.content:clear()
 
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<yellow>                    AUTOPILOT STATUS\n")
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
 
   -- Current ship info
   autopilot.gui.content:cecho("<white>Current Ship:\n")
@@ -2791,11 +2886,15 @@ function autopilot.displayStatusTab()
 
   autopilot.gui.content:cecho("<white>Autopilot Status:\n")
   if autopilot.runningCargo then
-    autopilot.gui.content:cecho("  <green>● ACTIVE (RUNNING CARGO)<white>  ")
+    if autopilot.cargoPaused then
+      autopilot.gui.content:cecho("  <yellow>* PAUSED (CARGO PAUSED)<white>  ")
+    else
+      autopilot.gui.content:cecho("  <green>* ACTIVE (RUNNING CARGO)<white>  ")
+    end
   elseif flightEnabled > 0 then
-    autopilot.gui.content:cecho("  <green>● ACTIVE<white>  ")
+    autopilot.gui.content:cecho("  <green>* ACTIVE<white>  ")
   else
-    autopilot.gui.content:cecho("  <red>○ Idle<white>  ")
+    autopilot.gui.content:cecho("  <red>o Idle<white>  ")
   end
 
   -- Toggle button for autopilot triggers
@@ -2874,7 +2973,7 @@ function autopilot.displayStatusTab()
   autopilot.gui.content:cecho("\n\n")
 
   -- Statistics
-  autopilot.gui.content:cecho("<cyan>═══════════════════════════════════════════════════════════════\n")
+  autopilot.gui.content:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
   autopilot.gui.content:cecho("<white>Saved Configurations:\n")
   autopilot.gui.content:cecho(string.format("  Ships: <yellow>%d<white>  |  Routes: <yellow>%d<white>  |  Manifests: <yellow>%d<white>  |  Pads: <yellow>%d\n",
     autopilot.ships and #autopilot.ships or 0,
