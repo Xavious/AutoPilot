@@ -1157,6 +1157,8 @@ function autopilot.trigger.land()
 
   if autopilot.runningCargo then
     local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
+    local currentPlanet = matches.planet:lower()
+    local deliveryPlanet = delivery.planet:lower()
 
     -- Check if there are more waypoints - if so, continue the route
     if autopilot.waypoints and next(autopilot.waypoints) then
@@ -1168,21 +1170,30 @@ function autopilot.trigger.land()
       return
     end
 
-    -- No more waypoints - we're at the delivery planet
-    cecho("[<cyan>AutoPilot<reset>] <green>Delivery destination reached:<reset> <cyan>"..delivery.planet.."<reset>\n")
-    
-    -- If cargo run is paused, don't sell cargo - leave it for manual handling
-    if autopilot.cargoPaused then
-      cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Ship refueled. Cargo remains in hold.\n")
-      cecho("[<cyan>AutoPilot<reset>] <gray>Sell cargo manually or use<reset> <green>ap cargo resume<reset> <gray>when ready.<reset>\n")
+    -- Check if we're at the delivery planet for the current delivery
+    if currentPlanet == deliveryPlanet then
+      cecho("[<cyan>AutoPilot<reset>] <green>Delivery destination reached:<reset> <cyan>"..delivery.planet.."<reset>\n")
+      
+      -- If cargo run is paused, don't sell cargo - leave it for manual handling
+      if autopilot.cargoPaused then
+        cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Ship refueled. Cargo remains in hold.\n")
+        cecho("[<cyan>AutoPilot<reset>] <gray>Sell cargo manually or use<reset> <green>ap cargo resume<reset> <gray>when ready.<reset>\n")
+        return
+      end
+      
+      -- Not paused - proceed with selling cargo using current delivery's contraband flag
+      local useContraband = delivery.contraband or autopilot.useContraband
+      local sellCommand = useContraband and "sellcontraband" or "sellcargo"
+      send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+      return
+    else
+      -- We're at a pickup location (not the delivery planet), so buy cargo using current delivery's contraband flag
+      local useContraband = delivery.contraband or autopilot.useContraband
+      local buyCommand = useContraband and "buycontraband" or "buycargo"
+      send(buyCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+      cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..delivery.resource.."<reset> for delivery to <cyan>"..delivery.planet.."<reset>\n")
       return
     end
-    
-    -- Not paused - proceed with selling cargo
-    local useContraband = delivery.contraband or autopilot.useContraband
-    local sellCommand = useContraband and "sellcontraband" or "sellcargo"
-    send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
-    return
   end
 
   if autopilot.waypoints and next(autopilot.waypoints) then
@@ -1242,7 +1253,7 @@ function autopilot.trigger.cargoSold()
   autopilot.revenue = autopilot.revenue + matches.cost
   autopilot.profit = autopilot.revenue - autopilot.expense - autopilot.fuelCost
 
-  -- Check if cargo run is paused - if so, don't buy next cargo
+  -- Check if cargo run is paused - if so, don't move to next delivery
   if autopilot.cargoPaused then
     cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run is paused.<reset> Use <green>ap cargo resume<reset> to continue.\n")
     return
@@ -1255,13 +1266,9 @@ function autopilot.trigger.cargoSold()
     autopilot.deliveryIndex = autopilot.deliveryIndex + 1
   end
 
-  -- Buy cargo for next delivery
-  local nextDelivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
-  -- Use per-delivery contraband flag if set, otherwise fall back to global setting
-  local useContraband = nextDelivery.contraband or autopilot.useContraband
-  local buyCommand = useContraband and "buycontraband" or "buycargo"
-  send(buyCommand.." "..autopilot.ship.name.." '"..nextDelivery.resource.. "' "..autopilot.ship.capacity)
-  cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..nextDelivery.resource.."<reset> for delivery to <cyan>"..nextDelivery.planet.."<reset>\n")
+  -- Next cargo will be bought when landing at pickup location
+  -- The land() trigger will handle buying with the correct contraband flag
+  cecho("[<cyan>AutoPilot<reset>] <yellow>Ready for next delivery leg.<reset> Navigate to pickup location and land to buy <magenta>"..autopilot.currentManifest.deliveries[autopilot.deliveryIndex].resource.."<reset>.\n")
 end
 
 function autopilot.trigger.refuel()
