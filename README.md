@@ -9,6 +9,7 @@ A comprehensive Mudlet package for Legends of the Jedi (LOTJ) that automates spa
 - **Ship Templates** - Save and load multiple ship configurations
 - **Route Planning** - Create reusable flight routes for efficient travel
 - **Preferred Landing Pads** - Set preferred landing pads for specific planets
+- **Space Stations** - Fly to and land on orbital and deep-space stations by saved coordinates
 - **Profit Tracking** - Monitor cargo run expenses, revenue, and credits per hour
 - **Modern GUI** - Easy-to-use interface for all functionality
 - **Command-Line Support** - All features also accessible via console commands
@@ -26,11 +27,13 @@ A comprehensive Mudlet package for Legends of the Jedi (LOTJ) that automates spa
 
 Type `ap help` or `ap gui` to open the AutoPilot control panel.
 
-The GUI has four main tabs:
+The GUI has six tabs:
 - **Status** - View autopilot status, current ship, route, and manifest
 - **Ships** - Manage ship templates
 - **Routes** - Create and manage flight routes
 - **Manifests** - Create and manage cargo delivery manifests
+- **Stations** - Save space stations so they can be used as waypoints
+- **Pads** - Manage preferred landing pads and station hangars
 
 ### Basic Flight
 
@@ -104,12 +107,29 @@ Create cargo delivery manifests:
 - **List View** - Shows all saved manifests with **[Load]**, **[Edit]**, and **[Delete]** buttons
 - **Manifest Editor:**
   - **Manifest Name** - Set/edit name
-  - **Deliveries** - List of planet/resource pairs
+  - **Deliveries** - List of deliveries, shown as `resource → planet`
   - **Add Delivery** - Add new delivery stop
   - **Edit Delivery** - Modify existing delivery
     - Planet name
     - Resource to sell/buy
     - Optional route to follow (or fly direct)
+
+### Stations Tab
+
+Space stations can't be found with `showplanet`, so you save their coordinates here. Once saved, a station's name works anywhere a planet name does: `ap fly coruscant,my station`, routes, and manifest deliveries. Names are matched without regard to case.
+
+- **List View** - Shows all saved stations with **[Fly To]**, **[Edit]**, and **[Delete]** buttons
+- **Add/Edit Form:**
+  - **Station Name** - The name the game accepts for `course` and `land` (required)
+  - **Orbiting Planet** - The planet it orbits. Leave blank for a deep-space station
+  - **Galaxy X / Galaxy Y** - Galaxy coordinates (required)
+  - **System X / Y / Z** - Position within the system (required)
+
+**How stations are flown:**
+- **Orbital stations** - Calculates to the galaxy coordinates with 500 added to X (you can't calculate within 500 of a planet), courses to the station, and lands once in orbit.
+- **Deep-space stations** - Drops to `speed 1` so you don't overshoot, calculates right on top of the station, and lands as soon as you leave hyperspace.
+
+**Hangars:** AutoPilot reads the station's hangar list and picks an open hangar with free slots, starting with your preferred hangar if one is set (add the station name in the **Pads** tab with a hangar number, e.g. `2`), then the hangar with the most free slots. If you're out of landing range it retries a few times, then asks you to check your scanner.
 
 ## Command-Line Reference
 
@@ -253,7 +273,7 @@ For more landing pad help, use: `ap help pad`
 
 AutoPilot monitors game output with triggers that automatically:
 1. Launch your ship when you enter cockpit
-2. Engage autopilot to destination
+2. Calculate the jump and enter hyperspace
 3. Wait for hyperspace travel
 4. Land on arrival (using preferred pad if set)
 5. Exit ship and continue to next waypoint if any
@@ -305,6 +325,25 @@ When running cargo with a manifest:
 **GUI not showing?**
 - Type `ap gui` to open
 - Check for Mudlet errors in console
+
+## Changelog
+
+### v2.1.0
+
+**New**
+- **Space stations.** New **Stations** tab for saving orbital and deep-space stations by galaxy and system coordinates. Station names can be used as waypoints in `ap fly`, routes, and manifests.
+- **Hangar selection.** When landing at a station, AutoPilot picks an open hangar with free slots, using your preferred hangar first if it has room.
+- **Out-of-range landing retry.** If a station landing fails because you're more than 25 units away, AutoPilot retries before stopping and warning you.
+
+**Changed**
+- The ship name is now sent in quotes for `refuel`, `enter`, `close`, and cargo buy/sell commands, so ship names with spaces work.
+- Deliveries now display as `resource → planet` everywhere (manifest list, manifest editor, status, and command-line output) to make clear what goes where.
+- The landing pad list now reads up to 10 lines, to fit stations with more hangars.
+
+**Removed**
+- AutoPilot no longer sends `autopilot on` / `autopilot off`, since that command was removed from the game.
+
+For earlier versions, see [Releases](https://github.com/Xavious/AutoPilot/releases).
 
 ## Development
 
