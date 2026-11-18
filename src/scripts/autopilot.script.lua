@@ -15,6 +15,7 @@ autopilot.currentManifest = autopilot.currentManifest or nil
 autopilot.runningCargo = autopilot.runningCargo or false
 autopilot.useContraband = autopilot.useContraband or false
 autopilot.preferredPads = autopilot.preferredPads or {}
+autopilot.stations = autopilot.stations or {}
 autopilot.cargoPaused = autopilot.cargoPaused or false
 autopilot.pausedState = autopilot.pausedState or {}
 
@@ -40,6 +41,40 @@ function autopilot.getPreferredPad(planetName)
     return nil
   end
   return autopilot.preferredPads[planetName:lower()]
+end
+
+-- Look up a saved station by name (case-insensitive). Returns station, index or nil.
+function autopilot.getStation(name)
+  if not name or not autopilot.stations then
+    return nil
+  end
+  local key = name:lower()
+  for i, station in ipairs(autopilot.stations) do
+    if station.name and station.name:lower() == key then
+      return station, i
+    end
+  end
+  return nil
+end
+
+-- How far (on the X axis) to jump from an orbital station, since calculate refuses anything within 500 of a planet
+autopilot.stationOrbitOffset = 500
+
+-- A deep-space station has no planet to orbit, so we jump straight to its coordinates
+function autopilot.isDeepSpaceStation(station)
+  return station ~= nil and (not station.planet or station.planet == "")
+end
+
+-- Set the current destination by name. Waypoints that match a saved station
+-- carry a copy of the station so the flight triggers can branch on it.
+function autopilot.setDestination(name)
+  autopilot.destination = {}
+  autopilot.destination.planet = name
+  local station = autopilot.getStation(name)
+  if station then
+    autopilot.destination.station = table.deepcopy(station)
+  end
+  return autopilot.destination
 end
 
 -- Helper function to display current route
@@ -407,7 +442,7 @@ function autopilot.alias.status()
       if autopilot.runningCargo and i == autopilot.deliveryIndex then
         current = " <green>◆ CURRENT<reset>"
       end
-      cecho("<white>"..i.."<reset>. <cyan>"..delivery.planet.."<reset>:<magenta>"..delivery.resource.."<reset>"..contrabandText..routeText..current.."\n")
+      cecho("<white>"..i.."<reset>. <magenta>"..delivery.resource.."<reset> → <cyan>"..delivery.planet.."<reset>"..contrabandText..routeText..current.."\n")
     end
     cecho("----------------------------------------------\n")
   end
@@ -438,8 +473,7 @@ function autopilot.alias.fly()
     autopilot.waypoints = autopilot.tableString(matches.planets)
   end
 
-  autopilot.destination = {}
-  autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
+  autopilot.setDestination(table.remove(autopilot.waypoints, 1))
 
   cecho("[<cyan>AutoPilot<reset>] <yellow>Engaged<reset> | <green>Destination:<reset> <cyan>"..autopilot.destination.planet.."<reset>\n")
   enableTrigger("autopilot.flight")
@@ -466,8 +500,7 @@ function autopilot.flyRoute(routeIndex)
 
   -- Set up waypoints from route
   autopilot.waypoints = table.deepcopy(route.planets)
-  autopilot.destination = {}
-  autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
+  autopilot.setDestination(table.remove(autopilot.waypoints, 1))
 
   cecho("[<cyan>AutoPilot<reset>] <yellow>Flying route:<reset> <cyan>" .. routeName .. "<reset>\n")
   cecho("[<cyan>AutoPilot<reset>] <yellow>Engaged<reset> | <green>Destination:<reset> <cyan>"..autopilot.destination.planet.."<reset>\n")
@@ -879,7 +912,7 @@ function autopilot.alias.viewManifest()
       routeText = "\n   <gray>Route:<reset> Direct flight"
     end
     local contrabandText = delivery.contraband and "\n   <red>Contraband:<reset> <red>ENABLED ⚠<reset>" or ""
-    cecho(i..". <cyan>"..delivery.planet.."<reset> ← <magenta>"..delivery.resource.."<reset>"..routeText..contrabandText.."\n")
+    cecho(i..". <magenta>"..delivery.resource.."<reset> → <cyan>"..delivery.planet.."<reset>"..routeText..contrabandText.."\n")
   end
   cecho("----------------------------------------------\n")
 end
@@ -911,7 +944,7 @@ function autopilot.alias.addDelivery()
 
   local routeText = routeIndex and " (via route #"..routeIndex..")" or " (direct)"
   local contrabandText = useContraband and " <red>[CONTRABAND]<reset>" or ""
-  cecho("[<cyan>AutoPilot<reset>] Delivery added: <cyan>"..delivery.planet.."<reset> ← <magenta>"..delivery.resource.."<reset>"..routeText..contrabandText.."\n\n")
+  cecho("[<cyan>AutoPilot<reset>] Delivery added: <magenta>"..delivery.resource.."<reset> → <cyan>"..delivery.planet.."<reset>"..routeText..contrabandText.."\n\n")
 
   -- Show current manifest state
   autopilot.alias.viewManifest()
@@ -945,7 +978,7 @@ function autopilot.alias.startCargo()
   -- Buy cargo for first delivery
   local firstDelivery = autopilot.currentManifest.deliveries[1]
   local buyCommand = autopilot.getCargoCommand(firstDelivery, "buy")
-  send(buyCommand.." "..autopilot.ship.name.." '"..firstDelivery.resource.. "' "..autopilot.ship.capacity)
+  send(buyCommand.." \""..autopilot.ship.name.."\" '"..firstDelivery.resource.. "' "..autopilot.ship.capacity)
   cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run started<reset> | Buying <magenta>"..firstDelivery.resource.."<reset> for delivery to <cyan>"..firstDelivery.planet.."<reset>\n")
 end
 
@@ -966,7 +999,8 @@ function autopilot.alias.pauseCargo()
   autopilot.cargoPaused = true
   
   cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run paused.<reset>\n")
-  cecho("[<cyan>AutoPilot<reset>] <gray>Current delivery:<reset> <cyan>"..autopilot.currentManifest.deliveries[autopilot.deliveryIndex].planet.."<reset> ← <magenta>"..autopilot.currentManifest.deliveries[autopilot.deliveryIndex].resource.."<reset>\n")
+  local pausedDelivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
+  cecho("[<cyan>AutoPilot<reset>] <gray>Current delivery:<reset> <magenta>"..pausedDelivery.resource.."<reset> → <cyan>"..pausedDelivery.planet.."<reset>\n")
   cecho("[<cyan>AutoPilot<reset>] <gray>Automation will halt at next trigger checkpoint. Ship will remain landed/paused.<reset>\n\n")
   cecho("[<cyan>AutoPilot<reset>] <cyan>Resume options:<reset>\n")
   cecho("[<cyan>AutoPilot<reset>]   <green>ap cargo resume<reset> - Continue with next cargo leg (assumes ship empty)\n")
@@ -1018,7 +1052,7 @@ function autopilot.alias.resumeCargo()
     cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed (selling first).<reset>\n")
     cecho("[<cyan>AutoPilot<reset>] Selling <magenta>"..delivery.resource.."<reset> for <cyan>"..delivery.planet.."<reset>\n")
     
-    send(sellCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+    send(sellCommand.." \""..autopilot.ship.name.."\" '"..delivery.resource.."' "..autopilot.ship.capacity)
   else
     -- Assume ship is empty and at the correct cargo pad - buy next cargo
     local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
@@ -1027,7 +1061,7 @@ function autopilot.alias.resumeCargo()
     cecho("[<cyan>AutoPilot<reset>] <yellow>Cargo run resumed.<reset>\n")
     cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..delivery.resource.."<reset> for delivery to <cyan>"..delivery.planet.."<reset>\n")
     
-    send(buyCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+    send(buyCommand.." \""..autopilot.ship.name.."\" '"..delivery.resource.."' "..autopilot.ship.capacity)
   end
   
   -- Re-enable autopilot
@@ -1083,15 +1117,14 @@ function autopilot.trigger.openHatch()
     return
   end
   
-  send("refuel "..autopilot.ship.name)
-  send("enter "..autopilot.ship.name)
+  send("refuel \""..autopilot.ship.name.."\"")
+  send("enter \""..autopilot.ship.name.."\"")
   send("close")
   if autopilot.ship.enter then
     for i = 1, #autopilot.ship.enter do
       send(autopilot.ship.enter[i])
     end
   end
-  send("autopilot off")
   send("pilot")
   send("launch")
 
@@ -1106,6 +1139,30 @@ function autopilot.trigger.launch()
     return
   end
   
+  local station = autopilot.destination.station
+
+  -- Stations skip showplanet and calculate from their saved galaxy + system coordinates
+  if station then
+    if not station.galaxy or not station.coords then
+      cecho("\n[<cyan>AutoPilot<reset>] <red>Station <cyan>"..station.name.."<red> has no coordinates. Edit it in the Stations tab.<reset>\n")
+      return
+    end
+
+    local x, y, z = station.coords.x, station.coords.y, station.coords.z
+    if autopilot.isDeepSpaceStation(station) then
+      -- Deep space: jump right on top of it. Drop to minimum speed first so we don't overshoot.
+      cecho("\n[<cyan>AutoPilot<reset>] Deep-space station <cyan>"..station.name.."<reset>, jumping to saved coordinates.\n")
+      send("speed 1")
+    else
+      -- Orbital: calculate refuses anything within 500 of the planet, so offset one axis
+      local offset = autopilot.stationOrbitOffset
+      x = x + offset
+      cecho("\n[<cyan>AutoPilot<reset>] Orbital station <cyan>"..station.name.."<reset>, jumping "..offset.." out.\n")
+    end
+    send("calculate '"..station.galaxy.x.." "..station.galaxy.y.."' "..x.." "..y.." "..z)
+    return
+  end
+
   enableTrigger("autopilot.trigger.showplanet")
   send("showplanet "..autopilot.destination.planet)
 end
@@ -1130,7 +1187,24 @@ end
 
 function autopilot.trigger.exitHyperspace()
   debugc("autopilot.trigger.exitHyperspace()")
-  send("course "..autopilot.destination.planet)
+  local station = autopilot.destination.station
+
+  -- Deep-space station: we jumped on top of it, so land immediately
+  if autopilot.isDeepSpaceStation(station) then
+    autopilot.requestStationLanding()
+    return
+  end
+
+  -- Orbital station: course to the station itself; orbit trigger handles the landing
+  local target = station and station.name or autopilot.destination.planet
+  send("course "..target)
+end
+
+-- Ask the station for its hangar list (startLanding/landingChoices pick one)
+function autopilot.requestStationLanding()
+  autopilot.destination.landIndex = 1
+  autopilot.destination.landRetries = 0
+  send("land '"..autopilot.destination.station.name.."'")
 end
 
 function autopilot.trigger.orbit()
@@ -1138,6 +1212,13 @@ function autopilot.trigger.orbit()
 
   -- Check if there's a preferred pad for this planet (lowercase the planet name for lookup)
   local planet = matches.planet
+
+  -- Orbital station: we're orbiting its planet, so land on the station instead
+  if autopilot.destination and autopilot.destination.station then
+    autopilot.requestStationLanding()
+    return
+  end
+
   local preferredPad = autopilot.getPreferredPad(planet)
 
   if preferredPad then
@@ -1158,19 +1239,108 @@ end
 function autopilot.trigger.startLanding()
   debugc("autopilot.trigger.startLanding()")
   autopilot.destination.pads = {}
+  autopilot.destination.hangars = {}
 
-  -- Fallback landing logic (used when no preferred pad was specified)
-  tempTimer(2, [[send("land '"..autopilot.destination.planet.. "' "..autopilot.destination.pads[autopilot.destination.landIndex])]])
+  -- Wait for landingChoices to collect the list, then pick one
+  tempTimer(2, function()
+    if not autopilot.destination then return end
+
+    if autopilot.destination.station then
+      autopilot.landAtStationHangar()
+      return
+    end
+
+    -- Fallback landing logic (used when no preferred pad was specified)
+    local pad = autopilot.destination.pads[autopilot.destination.landIndex or 1]
+    if pad then
+      send("land '"..autopilot.destination.planet.. "' "..pad)
+    end
+  end)
+end
+
+-- Rank station hangars and land at the best one.
+-- Order: preferred hangar (if it has room), then open hangars with the most free slots.
+function autopilot.landAtStationHangar()
+  local station = autopilot.destination.station
+  local preferred = autopilot.getPreferredPad(station.name)
+  local preferredNum = preferred and tonumber(tostring(preferred):match("(%d+)"))
+
+  local candidates = {}
+  for _, hangar in ipairs(autopilot.destination.hangars or {}) do
+    if hangar.status:lower() == "open" and hangar.used < hangar.max then
+      table.insert(candidates, hangar)
+    end
+  end
+
+  table.sort(candidates, function(a, b)
+    if preferredNum then
+      if a.num == preferredNum and b.num ~= preferredNum then return true end
+      if b.num == preferredNum and a.num ~= preferredNum then return false end
+    end
+    return (a.max - a.used) > (b.max - b.used)
+  end)
+
+  if #candidates == 0 then
+    cecho("\n[<cyan>AutoPilot<reset>] <red>No open hangars with free slots at <cyan>"..station.name.."<red>. Land manually.<reset>\n")
+    return
+  end
+
+  -- Store as pads so trigger.restricted can fall through to the next hangar
+  autopilot.destination.pads = {}
+  for _, hangar in ipairs(candidates) do
+    table.insert(autopilot.destination.pads, hangar.num)
+  end
+  autopilot.destination.landIndex = 1
+
+  local best = candidates[1]
+  cecho("\n[<cyan>AutoPilot<reset>] Landing at <cyan>"..station.name.."<reset> hangar <yellow>"..best.num.."<reset> ("..(best.max - best.used).." slots free)\n")
+  send("land '"..station.name.."' "..best.num)
+end
+
+-- "You must be within 25 units to land on that ship."
+-- Could be still approaching or drifting away, so retry a few times before giving up.
+function autopilot.trigger.landOutOfRange()
+  debugc("autopilot.trigger.landOutOfRange()")
+  if not autopilot.destination or not autopilot.destination.station then return end
+
+  local maxRetries = 5
+  autopilot.destination.landRetries = (autopilot.destination.landRetries or 0) + 1
+  if autopilot.destination.landRetries > maxRetries then
+    cecho("\n[<cyan>AutoPilot<reset>] <red>Still out of range of <cyan>"..autopilot.destination.station.name.."<red> after "..maxRetries.." tries. Check your scanner, we may have overshot.<reset>\n")
+    return
+  end
+
+  cecho("\n[<cyan>AutoPilot<reset>] <yellow>Out of landing range<reset>, retrying ("..autopilot.destination.landRetries.."/"..maxRetries..")...\n")
+  tempTimer(3, function()
+    if not autopilot.destination or not autopilot.destination.station then return end
+    local pads = autopilot.destination.pads
+    local pad = pads and pads[autopilot.destination.landIndex or 1]
+    if pad then
+      send("land '"..autopilot.destination.station.name.."' "..pad)
+    else
+      send("land '"..autopilot.destination.station.name.."'")
+    end
+  end)
 end
 
 function autopilot.trigger.landingChoices()
   debugc("autopilot.trigger.landingChoices()")
-  table.insert(autopilot.destination.pads, matches.pad) 
+  -- Station hangar line: "Hangar 2: Open       Slot(s): 25/40"
+  if matches.hangar then
+    autopilot.destination.hangars = autopilot.destination.hangars or {}
+    table.insert(autopilot.destination.hangars, {
+      num = tonumber(matches.hangar),
+      status = matches.status,
+      used = tonumber(matches.used),
+      max = tonumber(matches.max)
+    })
+    return
+  end
+  table.insert(autopilot.destination.pads, matches.pad)
 end
 
 function autopilot.trigger.land()
   debugc("autopilot.trigger.land()")
-  send("autopilot on")
   if autopilot.ship.exit then
     for i = 1, #autopilot.ship.exit do
       send(autopilot.ship.exit[i])
@@ -1178,8 +1348,8 @@ function autopilot.trigger.land()
   end
   send("open")
   send("leave")
-  send("close "..autopilot.ship.name)
-  send("refuel "..autopilot.ship.name)
+  send("close \""..autopilot.ship.name.."\"")
+  send("refuel \""..autopilot.ship.name.."\"")
 
   if autopilot.runningCargo then
     local delivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
@@ -1187,8 +1357,7 @@ function autopilot.trigger.land()
     -- Check if there are more waypoints - if so, continue the route
     if autopilot.waypoints and next(autopilot.waypoints) then
       cecho("[<cyan>AutoPilot<reset>] <yellow>Waypoint reached<reset>, continuing route...\n")
-      autopilot.destination = {}
-      autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
+      autopilot.setDestination(table.remove(autopilot.waypoints, 1))
       cecho("[<cyan>AutoPilot<reset>] Next destination: <cyan>"..autopilot.destination.planet.."<reset>\n")
       autopilot.openShip()
       return
@@ -1205,14 +1374,13 @@ function autopilot.trigger.land()
     local cargoCommand = autopilot.getCargoCommand(delivery, "sell")
     
     cecho("[<cyan>AutoPilot<reset>] <green>Delivery destination reached:<reset> <cyan>"..delivery.planet.."<reset>\n")
-    send(cargoCommand.." "..autopilot.ship.name.." '"..delivery.resource.."' "..autopilot.ship.capacity)
+    send(cargoCommand.." \""..autopilot.ship.name.."\" '"..delivery.resource.."' "..autopilot.ship.capacity)
     return
   end
 
   if autopilot.waypoints and next(autopilot.waypoints) then
     cecho("[<cyan>AutoPilot<reset>] Setting destination to next waypoint...\n")
-    autopilot.destination = {}
-    autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
+    autopilot.setDestination(table.remove(autopilot.waypoints, 1))
     cecho("[<cyan>AutoPilot<reset>] Destination: <cyan>"..autopilot.destination.planet.."<reset>\n")
     autopilot.openShip()
     return
@@ -1246,15 +1414,13 @@ function autopilot.trigger.cargoPurchased()
     local route = autopilot.routes[delivery.route]
     autopilot.waypoints = table.deepcopy(route.planets)
     -- Set first planet in route as destination
-    autopilot.destination = {}
-    autopilot.destination.planet = table.remove(autopilot.waypoints, 1)
+    autopilot.setDestination(table.remove(autopilot.waypoints, 1))
     cecho("\n[<cyan>AutoPilot<reset>] Using route <white>#"..delivery.route.."<reset> to reach <cyan>"..delivery.planet.."<reset>\n")
     cecho("[<cyan>AutoPilot<reset>] First stop: <cyan>"..autopilot.destination.planet.."<reset>\n")
   else
     -- Direct flight to delivery planet
     autopilot.waypoints = {}
-    autopilot.destination = {}
-    autopilot.destination.planet = delivery.planet
+    autopilot.setDestination(delivery.planet)
     cecho("\n[<cyan>AutoPilot<reset>] Direct flight to <cyan>"..delivery.planet.."<reset>\n")
   end
 
@@ -1284,7 +1450,7 @@ function autopilot.trigger.cargoSold()
   local nextDelivery = autopilot.currentManifest.deliveries[autopilot.deliveryIndex]
   -- Use per-delivery contraband flag if set, otherwise fall back to global setting
   local buyCommand = autopilot.getCargoCommand(oldDelivery, "buy")
-  send(buyCommand.." "..autopilot.ship.name.." '"..nextDelivery.resource.. "' "..autopilot.ship.capacity)
+  send(buyCommand.." \""..autopilot.ship.name.."\" '"..nextDelivery.resource.. "' "..autopilot.ship.capacity)
   cecho("[<cyan>AutoPilot<reset>] Buying <magenta>"..nextDelivery.resource.."<reset> for delivery to <cyan>"..nextDelivery.planet.."<reset>\n")
 end
 
@@ -1390,8 +1556,8 @@ autopilot.gui.tabHBox = Geyser.HBox:new({
 
 -- Create tab buttons (HBox will auto-distribute them equally)
 autopilot.gui.tabs = {}
-local tabNames = {"status", "ships", "routes", "manifests", "pads"}
-local tabLabels = {"Status", "Ships", "Routes", "Manifests", "Pads"}
+local tabNames = {"status", "ships", "routes", "manifests", "stations", "pads"}
+local tabLabels = {"Status", "Ships", "Routes", "Manifests", "Stations", "Pads"}
 
 for i, tabName in ipairs(tabNames) do
   autopilot.gui.tabs[tabName] = Geyser.Label:new({
@@ -2031,8 +2197,8 @@ function autopilot.refreshManifestEditor()
     for i, delivery in ipairs(deliveries) do
       local routeText = autopilot.formatRouteText(delivery.route)
       local contrabandIndicator = delivery.contraband and " <red>⚠ [CONTRABAND]<white>" or ""
-      console:cecho(string.format("<white>%d. <cyan>%s <white>→ <yellow>%s%s%s  ",
-        i, delivery.planet or "?", delivery.resource or "?", routeText, contrabandIndicator))
+      console:cecho(string.format("<white>%d. <yellow>%s <white>→ <cyan>%s%s%s  ",
+        i, delivery.resource or "?", delivery.planet or "?", routeText, contrabandIndicator))
 
       -- Edit button
       console:fg("yellow")
@@ -2562,12 +2728,16 @@ function autopilot.refreshGUI()
     autopilot.showDeliveryForm(autopilot.gui.currentView.manifestIndex, autopilot.gui.currentView.deliveryIndex)
   elseif autopilot.gui.currentView and autopilot.gui.currentView.type == "edit_pad" then
     autopilot.showPadForm(autopilot.gui.currentView.planet)
+  elseif autopilot.gui.currentView and autopilot.gui.currentView.type == "edit_station" then
+    autopilot.showStationForm(autopilot.gui.currentView.index)
   elseif autopilot.gui.currentTab == "ships" then
     autopilot.displayShipsTab()
   elseif autopilot.gui.currentTab == "routes" then
     autopilot.displayRoutesTab()
   elseif autopilot.gui.currentTab == "manifests" then
     autopilot.displayManifestsTab()
+  elseif autopilot.gui.currentTab == "stations" then
+    autopilot.displayStationsTab()
   elseif autopilot.gui.currentTab == "pads" then
     autopilot.displayPadsTab()
   elseif autopilot.gui.currentTab == "status" then
@@ -2747,8 +2917,8 @@ function autopilot.displayManifestsTab()
       for j, delivery in ipairs(manifest.deliveries) do
         local routeText = autopilot.formatRouteText(delivery.route)
         local contrabandIndicator = delivery.contraband and " <red>⚠ [CONTRABAND]<white>" or ""
-        autopilot.gui.content:cecho(string.format("      <green>%s <white>→ <yellow>%s%s%s\n",
-          delivery.planet or "?", delivery.resource or "?", routeText, contrabandIndicator))
+        autopilot.gui.content:cecho(string.format("      <yellow>%s <white>→ <green>%s%s%s\n",
+          delivery.resource or "?", delivery.planet or "?", routeText, contrabandIndicator))
       end
     end
 
@@ -2828,6 +2998,145 @@ function autopilot.displayPadsTab()
   autopilot.gui.content:cecho("<white>Click <green>[+ Add New Pad]<white> to add, <yellow>[Edit]<white> to modify, or <red>[Delete]<white> to remove.\n")
 end
 
+function autopilot.displayStationsTab()
+  autopilot.cleanupFormUI()
+  autopilot.gui.formContainer:hide()
+  autopilot.gui.content:show()
+  local console = autopilot.gui.content
+  console:clear()
+
+  console:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
+  console:cecho("<yellow>                        SPACE STATIONS\n")
+  console:cecho("<cyan>───────────────────────────────────────────────────────────────\n\n")
+
+  console:fg("green")
+  console:echoLink("[+ Add New Station]", [[autopilot.showStationDialog()]], "Click to add a new station", true)
+  console:resetFormat()
+  console:cecho("\n\n")
+
+  if not autopilot.stations or #autopilot.stations == 0 then
+    console:cecho("<yellow>No stations saved yet.\n\n")
+    console:cecho("<white>Saved stations can be used as waypoints in <cyan>ap fly<white>, routes and manifests.\n")
+    console:cecho("<white>Every station needs its galaxy X Y and system X Y Z coordinates.\n")
+    console:cecho("<white>• <cyan>Orbital<white> stations: set the planet they orbit. AutoPilot jumps 500 out, courses to the station, then lands.\n")
+    console:cecho("<white>• <cyan>Deep-space<white> stations: leave the planet blank. AutoPilot drops to speed 1, jumps right on top, and lands.\n")
+    return
+  end
+
+  for i, station in ipairs(autopilot.stations) do
+    console:cecho(string.format("<white>%d. <cyan>%s\n", i, station.name))
+    if autopilot.isDeepSpaceStation(station) then
+      console:cecho("   <gray>Deep space\n")
+    else
+      console:cecho("   <gray>Orbiting  <green>" .. station.planet .. "\n")
+    end
+    if station.galaxy and station.coords then
+      console:cecho(string.format("   <white>Galaxy: <yellow>%s %s  <white>Coords: <yellow>%s %s %s\n",
+        station.galaxy.x, station.galaxy.y, station.coords.x, station.coords.y, station.coords.z))
+    else
+      console:cecho("   <red>No coordinates set. Edit this station before flying to it.\n")
+    end
+    local preferred = autopilot.getPreferredPad(station.name)
+    if preferred then
+      console:cecho("   <gray>Preferred hangar: <yellow>" .. preferred .. "\n")
+    end
+
+    console:cecho("   ")
+    console:fg("cyan")
+    console:echoLink("[Fly To]", function()
+      autopilot.waypoints = {}
+      autopilot.setDestination(station.name)
+      cecho("[<cyan>AutoPilot<reset>] <yellow>Engaged<reset> | <green>Destination:<reset> <cyan>"..station.name.."<reset>\n")
+      enableTrigger("autopilot.flight")
+      autopilot.openShip()
+    end, "Fly to this station", true)
+    console:cecho(" ")
+    console:fg("yellow")
+    console:echoLink("[Edit]", function() autopilot.showStationDialog(i) end, "Edit this station", true)
+    console:cecho(" ")
+    console:fg("red")
+    console:echoLink("[Delete]", function() autopilot.deleteStation(i) end, "Delete this station", true)
+    console:resetFormat()
+    console:cecho("\n\n")
+  end
+
+  console:cecho("<cyan>───────────────────────────────────────────────────────────────\n")
+  console:cecho("<white>Set a preferred hangar from the <cyan>Pads<white> tab using the station name (e.g. <yellow>2<white>).\n")
+end
+
+function autopilot.showStationDialog(stationIndex)
+  autopilot.goToView({type = "edit_station", index = stationIndex})
+end
+
+function autopilot.showStationForm(stationIndex)
+  local station = stationIndex and autopilot.stations[stationIndex] or nil
+  local galaxy = station and station.galaxy or {}
+  local coords = station and station.coords or {}
+
+  autopilot.showForm(
+    stationIndex and "EDIT STATION" or "ADD STATION",
+    {
+      {name = "name", label = "Station Name", value = station and station.name or ""},
+      {name = "planet", label = "Orbiting Planet", value = station and station.planet or ""},
+      {name = "galX", label = "Galaxy X", value = tostring(galaxy.x or "")},
+      {name = "galY", label = "Galaxy Y", value = tostring(galaxy.y or "")},
+      {name = "x", label = "System X", value = tostring(coords.x or "")},
+      {name = "y", label = "System Y", value = tostring(coords.y or "")},
+      {name = "z", label = "System Z", value = tostring(coords.z or "")}
+    },
+    function(values)
+      local name = values.name and values.name:match("^%s*(.-)%s*$") or ""
+      local planet = values.planet and values.planet:match("^%s*(.-)%s*$") or ""
+      if name == "" then
+        cecho("\n[<cyan>AutoPilot<reset>] <red>Station name is required.\n")
+        return
+      end
+
+      local _, existingIndex = autopilot.getStation(name)
+      if existingIndex and existingIndex ~= stationIndex then
+        cecho("\n[<cyan>AutoPilot<reset>] <red>A station named <cyan>"..name.."<red> already exists.\n")
+        return
+      end
+
+      local newStation = {name = name}
+      if planet ~= "" then
+        newStation.planet = planet
+      end
+
+      -- Coordinates are required for every station (we never use showplanet for them)
+      local function num(field)
+        return tonumber((values[field] or ""):match("^%s*(-?%d+)%s*$"))
+      end
+      local labels = {galX = "Galaxy X", galY = "Galaxy Y", x = "System X", y = "System Y", z = "System Z"}
+      for _, field in ipairs({"galX", "galY", "x", "y", "z"}) do
+        if not num(field) then
+          cecho("\n[<cyan>AutoPilot<reset>] <red>"..labels[field].." must be a whole number (e.g. <yellow>-40<red>).\n")
+          return
+        end
+      end
+      newStation.galaxy = {x = num("galX"), y = num("galY")}
+      newStation.coords = {x = num("x"), y = num("y"), z = num("z")}
+
+      if stationIndex then
+        autopilot.stations[stationIndex] = newStation
+      else
+        table.insert(autopilot.stations, newStation)
+      end
+      table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
+      cecho("\n[<cyan>AutoPilot<reset>] Station <cyan>"..name.."<reset> saved.\n")
+    end
+  )
+end
+
+function autopilot.deleteStation(stationIndex)
+  local station = autopilot.stations[stationIndex]
+  if not station then return end
+  table.remove(autopilot.stations, stationIndex)
+  table.save(getMudletHomeDir().."/AutoPilot.lua", autopilot)
+  cecho("[<cyan>AutoPilot<reset>] Station <cyan>"..station.name.."<reset> deleted.\n")
+  autopilot.refreshGUI()
+end
+
 function autopilot.displayStatusTab()
   autopilot.cleanupFormUI()
   autopilot.gui.formContainer:hide()
@@ -2872,8 +3181,8 @@ function autopilot.displayStatusTab()
     autopilot.gui.content:cecho("  <white>Deliveries:\n")
     for j, delivery in ipairs(autopilot.currentManifest.deliveries) do
       local routeText = autopilot.formatRouteText(delivery.route)
-      autopilot.gui.content:cecho(string.format("    <green>%s <white>→ <yellow>%s%s\n",
-        delivery.planet or "?", delivery.resource or "?", routeText))
+      autopilot.gui.content:cecho(string.format("    <yellow>%s <white>→ <green>%s%s\n",
+        delivery.resource or "?", delivery.planet or "?", routeText))
     end
     autopilot.gui.content:cecho("\n")
   else

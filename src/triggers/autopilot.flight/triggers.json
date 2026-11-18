@@ -135,7 +135,7 @@
               "multilineDelta": "0",
               "matchall": "no",
               "filter": "no",
-              "fireLength": "6",
+              "fireLength": "10",
               "highlight": "no",
               "highlightFG": "#ff0000",
               "highlightBG": "#ffff00",
@@ -166,6 +166,10 @@
                                    },
                                    {
                                           "pattern": "^(?<pad>.*?) \\(All Sizes\\)$",
+                                          "type": "regex"
+                                   },
+                                   {
+                                          "pattern": "^Hangar (?<hangar>\\d+): (?<status>\\w+)\\s+Slot\\(s\\): (?<used>\\d+)/(?<max>\\d+)",
                                           "type": "regex"
                                    }
                             ],
@@ -228,6 +232,26 @@
               "patterns": [
                      {
                             "pattern": "Restricted Landing pad. Limited to clans members and ships only.",
+                            "type": "substring"
+                     }
+              ],
+              "script": ""
+       },
+       {
+              "name": "autopilot.trigger.landOutOfRange",
+              "isActive": "yes",
+              "isFolder": "no",
+              "multiline": "no",
+              "multilineDelta": "0",
+              "matchall": "no",
+              "filter": "no",
+              "fireLength": "0",
+              "highlight": "no",
+              "highlightFG": "#ff0000",
+              "highlightBG": "#ffff00",
+              "patterns": [
+                     {
+                            "pattern": "You must be within 25 units to land on that ship.",
                             "type": "substring"
                      }
               ],
